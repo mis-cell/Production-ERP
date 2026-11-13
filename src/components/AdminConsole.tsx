@@ -1047,11 +1047,15 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                     Open the Terminal inside your project folder on Ubuntu (<code className="font-mono">192.168.1.6</code>) and run this single script—it automatically creates the <code className="font-mono">production</code> database in PostgreSQL, creates all 42 tables, and starts the web app on <strong>Port 3002</strong>:
                   </p>
                   <div className="bg-[#1E0B36] text-purple-100 rounded-xl p-4 font-mono text-xs overflow-x-auto space-y-2">
-                    <div className="text-amber-400 font-bold"># Auto-creates PostgreSQL "production" DB + 42 Tables + Starts Port 3002:</div>
+                    <div className="text-amber-400 font-bold"># 1. Download from GitHub into Production-ERP-main:</div>
+                    <div>cd ~</div>
+                    <div>git clone https://github.com/mis-cell/Production-ERP.git Production-ERP-main</div>
+                    <div>cd ~/Production-ERP-main</div>
+                    <div className="text-amber-400 font-bold pt-1"># 2. Auto-create PostgreSQL "production" DB + 42 Tables + Start Port 3002:</div>
                     <div>chmod +x setup-postgres-production.sh</div>
                     <div>./setup-postgres-production.sh</div>
-                    <div className="text-emerald-400 pt-1"># Then open in browser on any computer on your network:</div>
-                    <div>http://192.168.1.6:3002</div>
+                    <div className="text-emerald-400 pt-1"># 3. Or keep running 24/7 in background:</div>
+                    <div>chmod +x deploy-ubuntu24-port3002.sh && ./deploy-ubuntu24-port3002.sh</div>
                   </div>
                 </div>
 
