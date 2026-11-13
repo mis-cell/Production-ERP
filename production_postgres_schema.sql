@@ -1,0 +1,663 @@
+-- ============================================================================
+-- BALLY JUTE MILL ERP - POSTGRESQL "production" DATABASE SCHEMA (42 TABLES)
+-- Target Server: BJCL (192.168.1.6:5432) -> Database: "production"
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS roles (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT NOT NULL DEFAULT '',
+  is_admin INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  employee_code TEXT NOT NULL DEFAULT '',
+  department TEXT NOT NULL DEFAULT 'All',
+  role_id INTEGER NOT NULL REFERENCES roles(id),
+  is_active INTEGER NOT NULL DEFAULT 1,
+  last_login TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+  id SERIAL PRIMARY KEY,
+  role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  module_key TEXT NOT NULL,
+  can_view INTEGER NOT NULL DEFAULT 1,
+  can_create INTEGER NOT NULL DEFAULT 1,
+  can_edit INTEGER NOT NULL DEFAULT 1,
+  can_delete INTEGER NOT NULL DEFAULT 0,
+  can_report INTEGER NOT NULL DEFAULT 1,
+  UNIQUE(role_id, module_key)
+);
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  module_key TEXT NOT NULL,
+  override_mode TEXT NOT NULL DEFAULT 'inherit',
+  can_view INTEGER NOT NULL DEFAULT 1,
+  can_create INTEGER NOT NULL DEFAULT 1,
+  can_edit INTEGER NOT NULL DEFAULT 0,
+  can_delete INTEGER NOT NULL DEFAULT 0,
+  can_report INTEGER NOT NULL DEFAULT 1,
+  UNIQUE(user_id, module_key)
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER,
+  username TEXT NOT NULL,
+  module_key TEXT NOT NULL,
+  action_name TEXT NOT NULL,
+  details TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1. CARDING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS carding_log_book (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_type TEXT NOT NULL DEFAULT '',
+  machine_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  operator_name TEXT NOT NULL DEFAULT '',
+  production_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  remarks TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT NOT NULL DEFAULT 'system',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS carding_machine_breakdown (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  stop_time TEXT NOT NULL DEFAULT '',
+  start_time TEXT NOT NULL DEFAULT '',
+  duration_mins DOUBLE PRECISION NOT NULL DEFAULT 0,
+  reason TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT NOT NULL DEFAULT 'system',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS carding_pile_stock (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  pile_type TEXT NOT NULL DEFAULT '',
+  opening_stock DOUBLE PRECISION NOT NULL DEFAULT 0,
+  received_qty DOUBLE PRECISION NOT NULL DEFAULT 0,
+  consumed_qty DOUBLE PRECISION NOT NULL DEFAULT 0,
+  closing_stock DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT NOT NULL DEFAULT 'system',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. CUTTING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS cutting_shifts (
+  id SERIAL PRIMARY KEY,
+  shift_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  supervisor TEXT NOT NULL DEFAULT '',
+  attendance_count INTEGER NOT NULL DEFAULT 0,
+  total_cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(shift_date, shift_name)
+);
+
+CREATE TABLE IF NOT EXISTS cutting_production_rows (
+  id SERIAL PRIMARY KEY,
+  shift_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weight_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  row_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS cutting_masters (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  extra_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS cutting_settings (
+  setting_key TEXT PRIMARY KEY,
+  setting_value TEXT NOT NULL
+);
+
+-- 3. DAMPING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS damping_shifts (
+  id SERIAL PRIMARY KEY,
+  shift_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  supervisor TEXT NOT NULL DEFAULT '',
+  total_rolls DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_weight DOUBLE PRECISION NOT NULL DEFAULT 0,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(shift_date, shift_name)
+);
+
+CREATE TABLE IF NOT EXISTS damping_production_rows (
+  id SERIAL PRIMARY KEY,
+  shift_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  rolls DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weight_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  row_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS damping_masters (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  extra_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS damping_settings (
+  setting_key TEXT PRIMARY KEY,
+  setting_value TEXT NOT NULL
+);
+
+-- 4. HEMMING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS hemming_shifts (
+  id SERIAL PRIMARY KEY,
+  shift_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  supervisor TEXT NOT NULL DEFAULT '',
+  total_bags DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(shift_date, shift_name)
+);
+
+CREATE TABLE IF NOT EXISTS hemming_production_rows (
+  id SERIAL PRIMARY KEY,
+  shift_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  bags DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weight_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  row_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS hemming_masters (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  extra_json TEXT NOT NULL DEFAULT '{}'
+);
+
+-- 5. HERACKLE PRODUCTION TABLES
+CREATE TABLE IF NOT EXISTS herackle_records (
+  id SERIAL PRIMARY KEY,
+  record_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  supervisor TEXT NOT NULL DEFAULT '',
+  total_qty DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_weight DOUBLE PRECISION NOT NULL DEFAULT 0,
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(record_date, shift_name)
+);
+
+CREATE TABLE IF NOT EXISTS herackle_rows (
+  id SERIAL PRIMARY KEY,
+  record_date TEXT NOT NULL,
+  shift_name TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  qty DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weight_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  row_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS herackle_masters (
+  id SERIAL PRIMARY KEY,
+  category TEXT NOT NULL,
+  name TEXT NOT NULL,
+  extra_json TEXT NOT NULL DEFAULT '{}'
+);
+
+-- 6. LAPPING PRODUCTION TABLE
+CREATE TABLE IF NOT EXISTS lapping_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  operator_name TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weight_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT NOT NULL DEFAULT 'system',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 7. NARROW BEAMING TABLES
+CREATE TABLE IF NOT EXISTS narrow_beaming_rounds (
+  id SERIAL PRIMARY KEY,
+  round_id TEXT NOT NULL UNIQUE,
+  machine_no TEXT NOT NULL DEFAULT 'NB-01',
+  quality TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'OPEN',
+  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  closed_at TIMESTAMP,
+  total_cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS narrow_beaming_logs (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  operator_name TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS narrow_beaming_production (
+  id SERIAL PRIMARY KEY,
+  round_id TEXT NOT NULL,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  verified INTEGER NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. NARROW LOOM TABLES
+CREATE TABLE IF NOT EXISTS narrow_loom_logbook (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  weaver_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS narrow_loom_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  efficiency DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weaver_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. PRE BEAMING TABLES
+CREATE TABLE IF NOT EXISTS pre_beaming_rounds (
+  id SERIAL PRIMARY KEY,
+  round_id TEXT NOT NULL UNIQUE,
+  machine_no TEXT NOT NULL DEFAULT 'PB-01',
+  quality TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'OPEN',
+  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  closed_at TIMESTAMP,
+  total_beams INTEGER NOT NULL DEFAULT 0,
+  total_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS pre_beaming_logs (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS pre_beaming_production (
+  id SERIAL PRIMARY KEY,
+  round_id TEXT NOT NULL,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weight_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  verified INTEGER NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. PRESS DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS press_bales (
+  id SERIAL PRIMARY KEY,
+  bale_serial TEXT NOT NULL UNIQUE,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  press_no TEXT NOT NULL DEFAULT 'Press-1',
+  quality TEXT NOT NULL DEFAULT '',
+  buyer_mark TEXT NOT NULL DEFAULT '',
+  bags_per_bale INTEGER NOT NULL DEFAULT 500,
+  gross_wt_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  tare_wt_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  net_wt_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT NOT NULL DEFAULT 'system',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS press_options (
+  id SERIAL PRIMARY KEY,
+  option_type TEXT NOT NULL,
+  option_value TEXT NOT NULL,
+  extra_json TEXT NOT NULL DEFAULT '{}'
+);
+
+-- 11. S4 BEAMING TABLES
+CREATE TABLE IF NOT EXISTS s4_beaming_logbook (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  order_color TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  operator_name TEXT NOT NULL DEFAULT '',
+  opening_meter DOUBLE PRECISION NOT NULL DEFAULT 0,
+  closing_meter DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS s4_beaming_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  round_no TEXT NOT NULL DEFAULT 'R-1',
+  beam_no TEXT NOT NULL DEFAULT '',
+  order_color TEXT NOT NULL DEFAULT '',
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS s4_beaming_verification (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  round_no TEXT NOT NULL,
+  verified_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  variance_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'VERIFIED',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS s4_beaming_purchase_orders (
+  id SERIAL PRIMARY KEY,
+  po_number TEXT NOT NULL,
+  order_color TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT '',
+  target_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  produced_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 12. S4 LOOM TABLES
+CREATE TABLE IF NOT EXISTS s4_loom_logbook (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT '',
+  weaver_name TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS s4_loom_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT '',
+  opening_reading DOUBLE PRECISION NOT NULL DEFAULT 0,
+  closing_reading DOUBLE PRECISION NOT NULL DEFAULT 0,
+  net_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS s4_loom_verification (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL,
+  book_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  actual_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  diff_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. SPINNING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS spinning_logbook (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  frame_no TEXT NOT NULL,
+  quality_count TEXT NOT NULL DEFAULT '',
+  rpm DOUBLE PRECISION NOT NULL DEFAULT 0,
+  tpi DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS spinning_breakdown (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  frame_no TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  down_mins DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS spinning_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  frame_no TEXT NOT NULL,
+  quality_count TEXT NOT NULL DEFAULT '',
+  doffs INTEGER NOT NULL DEFAULT 0,
+  production_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  efficiency DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 14. SPREADER & SOFTENER TABLES
+CREATE TABLE IF NOT EXISTS spreader_logbook (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  grade_mix TEXT NOT NULL DEFAULT '',
+  emulsion_pct DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS spreader_breakdown (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  duration_mins DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS spreader_meter_reading (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  opening_reading DOUBLE PRECISION NOT NULL DEFAULT 0,
+  closing_reading DOUBLE PRECISION NOT NULL DEFAULT 0,
+  net_reading DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS spreader_roll_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT '',
+  rolls_count INTEGER NOT NULL DEFAULT 0,
+  weight_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 15. VL BEAMING TABLES
+CREATE TABLE IF NOT EXISTS vl_beaming_logbook (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT 'VLB-01',
+  beam_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  operator_name TEXT NOT NULL DEFAULT '',
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS vl_beaming_rounds (
+  id SERIAL PRIMARY KEY,
+  round_no TEXT NOT NULL UNIQUE,
+  machine_no TEXT NOT NULL DEFAULT 'VLB-01',
+  quality TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'OPEN',
+  total_meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS vl_beaming_production (
+  id SERIAL PRIMARY KEY,
+  round_no TEXT NOT NULL DEFAULT 'VLR-101',
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  machine_no TEXT NOT NULL DEFAULT 'VLB-01',
+  beam_no TEXT NOT NULL DEFAULT '',
+  quality TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  operator_name TEXT NOT NULL DEFAULT '',
+  verified INTEGER NOT NULL DEFAULT 0,
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 16. VL LOOM TABLES
+CREATE TABLE IF NOT EXISTS vl_loom_logbook (
+  id SERIAL PRIMARY KEY,
+  group_id TEXT NOT NULL,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT '',
+  beam_no TEXT NOT NULL DEFAULT '',
+  weaver_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS vl_loom_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  loom_no TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT '',
+  cuts DOUBLE PRECISION NOT NULL DEFAULT 0,
+  meters DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weaver_name TEXT NOT NULL DEFAULT '',
+  raw_json TEXT NOT NULL DEFAULT '{}',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SEED DEFAULT ROLES & ADMIN USER IN POSTGRESQL
+INSERT INTO roles (name, description, is_admin) VALUES
+  ('Super Admin', 'Full administrative access to all 16 departments, users, roles, and database tables', 1),
+  ('Mill Manager', 'View, create, edit, and run reports across all 16 mill departments', 0),
+  ('Spinning & Prep Supervisor', 'Supervisor access for Spreader, Carding, and Spinning departments', 0),
+  ('Beaming & Loom Supervisor', 'Supervisor access for Pre/Narrow/S4/VL Beaming and Narrow/S4/VL Looms', 0),
+  ('Finishing & Packing Officer', 'Access to Damping, Cutting, Hemming, Herackle, Lapping, and Press departments', 0)
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO users (username, password_hash, full_name, employee_code, department, role_id, is_active)
+SELECT 'admin', 'admin123', 'Rajesh Chatterjee (IT & ERP Admin)', 'BJM-001', 'All Departments', id, 1
+FROM roles WHERE name = 'Super Admin'
+ON CONFLICT (username) DO NOTHING;
