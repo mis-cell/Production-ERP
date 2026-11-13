@@ -6,7 +6,6 @@ import {
   LogOut,
   Users,
   Database,
-  Server,
   Search,
   RefreshCw,
   Maximize2,
@@ -18,6 +17,18 @@ import {
 import { UserSession, EffectivePermission, ModuleMeta } from './types';
 import { AdminConsole } from './components/AdminConsole';
 import { ReportSection } from './components/ReportSection';
+
+// Exact 8 Colour Plates from the uploaded Magenta-to-Blush Palette
+export const MAGENTA_BLUSH_PLATES = [
+  '#9E0059', // Plate 1: Deep Royal Magenta
+  '#C90D6B', // Plate 2: Vivid Ruby Magenta
+  '#E62A82', // Plate 3: Bright Rose Pink
+  '#F35BA0', // Plate 4: Warm Flamingo Pink
+  '#EC69A8', // Plate 5: Medium Orchid Blush
+  '#F595C3', // Plate 6: Soft Carnation Pink
+  '#F9BCDA', // Plate 7: Pastel Petal Blush
+  '#FDE2EF', // Plate 8: Light Silk Blush
+];
 
 // Listed in exact 1..16 order matching the 16 forms in the source file
 const ALL_MODULES: ModuleMeta[] = [
@@ -181,7 +192,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'form' | 'report' | 'admin'>('form');
   const [activeModuleKey, setActiveModuleKey] = useState<string>('carding');
   const [reportDeptFilter, setReportDeptFilter] = useState<string>('all');
-  const [adminTab, setAdminTab] = useState<'users' | 'roles' | 'database' | 'ubuntu'>('users');
+  const [adminTab, setAdminTab] = useState<'users' | 'roles' | 'database'>('users');
   const [adminTableFilter, setAdminTableFilter] = useState<string>('');
   const [sidebarSearch, setSidebarSearch] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -237,22 +248,26 @@ export default function App() {
   };
 
   // ==========================================================================
-  // STEP 1: SIMPLE, CLEAN CENTERED LOGIN PAGE (WITH UPLOADED LOGO & THEME)
+  // STEP 1: HD GLOSSY 8-PLATE MAGENTA-TO-BLUSH LOGIN PAGE
   // ==========================================================================
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#2E054E] via-[#581C87] to-[#9D174D] flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#FCFBF9] rounded-2xl shadow-2xl border-2 border-amber-400/50 overflow-hidden">
-          {/* Top Accent Strip in Lotus Orange -> Magenta -> Purple */}
-          <div className="h-2.5 w-full bg-gradient-to-r from-amber-400 via-orange-500 to-[#581C87]" />
+      <div className="min-h-screen bg-gradient-to-br from-[#9E0059] via-[#C90D6B] to-[#F35BA0] flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md hd-gloss-card rounded-2xl overflow-hidden shadow-2xl border-2 border-[#F595C3]">
+          {/* 8-Plate Glossy Color Bar at Top */}
+          <div className="grid grid-cols-8 h-3 w-full">
+            {MAGENTA_BLUSH_PLATES.map((hex) => (
+              <div key={hex} style={{ backgroundColor: hex }} />
+            ))}
+          </div>
 
           <div className="p-8 text-center">
-            <h1 className="text-2xl font-extrabold text-[#3B0764] tracking-tight">
+            <h1 className="text-2xl font-black text-[#38001E] tracking-tight">
               BALLY JUTE MILL ERP
             </h1>
 
             {loginError && (
-              <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700 text-left">
+              <div className="mt-4 p-3 rounded-lg bg-[#FDE2EF] border-2 border-[#C90D6B] text-xs font-black text-[#9E0059] text-left">
                 {loginError}
               </div>
             )}
@@ -265,8 +280,8 @@ export default function App() {
               className="mt-6 space-y-4 text-left"
             >
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#3B0764] mb-1.5">
-                  <UserIcon className="w-3.5 h-3.5 inline mr-1 text-orange-600" />
+                <label className="block text-xs font-black uppercase tracking-wider text-[#38001E] mb-1.5">
+                  <UserIcon className="w-3.5 h-3.5 inline mr-1.5 text-[#9E0059]" />
                   Username
                 </label>
                 <input
@@ -275,13 +290,13 @@ export default function App() {
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   placeholder="Enter Username"
-                  className="w-full px-4 py-2.5 text-sm border border-purple-200 rounded-xl bg-white text-slate-900 focus:outline-none focus:border-[#581C87] font-semibold"
+                  className="w-full px-4 py-2.5 text-sm border-2 border-[#EC69A8] rounded-xl bg-white text-[#38001E] focus:outline-none focus:border-[#9E0059] font-extrabold shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#3B0764] mb-1.5">
-                  <Lock className="w-3.5 h-3.5 inline mr-1 text-orange-600" />
+                <label className="block text-xs font-black uppercase tracking-wider text-[#38001E] mb-1.5">
+                  <Lock className="w-3.5 h-3.5 inline mr-1.5 text-[#9E0059]" />
                   Password
                 </label>
                 <input
@@ -290,48 +305,18 @@ export default function App() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="Enter Password"
-                  className="w-full px-4 py-2.5 text-sm border border-purple-200 rounded-xl bg-white text-slate-900 focus:outline-none focus:border-[#581C87] font-semibold"
+                  className="w-full px-4 py-2.5 text-sm border-2 border-[#EC69A8] rounded-xl bg-white text-[#38001E] focus:outline-none focus:border-[#9E0059] font-extrabold shadow-inner"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loggingIn}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#EA580C] via-[#9D174D] to-[#4C1D95] hover:opacity-95 text-white font-extrabold text-sm shadow-md transition-all cursor-pointer"
+                className="w-full py-3 rounded-xl hd-gloss-btn text-white font-black text-sm tracking-wide transition-all cursor-pointer"
               >
-                {loggingIn ? 'Signing In...' : 'LOGIN TO SYSTEM'}
+                {loggingIn ? 'SIGNING IN...' : 'LOGIN TO SYSTEM'}
               </button>
             </form>
-
-            {/* Quick Role Login Buttons */}
-            <div className="mt-6 pt-4 border-t border-purple-100">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                Quick Login Accounts
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => performLogin('admin', 'admin123')}
-                  className="py-1.5 px-2 rounded-lg bg-purple-100 hover:bg-purple-200 text-[#3B0764] text-xs font-bold cursor-pointer"
-                >
-                  Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => performLogin('manager', '1234')}
-                  className="py-1.5 px-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-900 text-xs font-bold cursor-pointer"
-                >
-                  Manager
-                </button>
-                <button
-                  type="button"
-                  onClick={() => performLogin('spinning_sup', '1234')}
-                  className="py-1.5 px-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold cursor-pointer"
-                >
-                  Supervisor
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -352,20 +337,20 @@ export default function App() {
   const activeModuleMeta = ALL_MODULES.find((m) => m.key === activeModuleKey) || ALL_MODULES[0];
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[#FCFBF9] text-slate-900">
+    <div className="h-screen w-screen overflow-hidden flex bg-[#FDE2EF] text-[#38001E]">
       {/* LEFT SIDEBAR: All Forms + Report Section + Admin Panel */}
       {!fullScreenModule && (
         <aside
           className={`${
             sidebarCollapsed ? 'w-16' : 'w-72'
-          } bg-gradient-to-b from-[#2E054E] via-[#3B0764] to-[#4C1D95] text-white flex flex-col border-r border-purple-900 transition-all duration-150 shrink-0 shadow-xl`}
+          } hd-gloss-sidebar text-white flex flex-col border-r-2 border-[#9E0059] transition-all duration-150 shrink-0`}
         >
-          {/* Top Logo & Brand Header */}
-          <div className="p-3.5 border-b border-white/10 flex items-center justify-between bg-black/15">
+          {/* Top Brand Header */}
+          <div className="p-3.5 border-b border-white/25 flex items-center justify-between bg-[#7A0045]/70">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="truncate">
-                  <div className="font-extrabold text-sm text-white tracking-tight truncate">
+                  <div className="font-black text-base text-white tracking-tight truncate drop-shadow-xs">
                     BALLY JUTE MILL
                   </div>
                 </div>
@@ -373,32 +358,38 @@ export default function App() {
             )}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1.5 rounded-lg text-purple-200 hover:text-white hover:bg-white/10 cursor-pointer"
+              className="p-1.5 rounded-lg text-white hover:bg-white/20 cursor-pointer"
               title="Collapse / Expand Sidebar"
             >
               <Menu className="w-4 h-4" />
             </button>
           </div>
 
-          {/* 3 Primary Mode Switchers at Top of Sidebar */}
+          {/* Primary Mode Switchers at Top of Sidebar */}
           {!sidebarCollapsed && (
-            <div className="p-3 border-b border-white/10 space-y-1.5 bg-black/10">
+            <div className="p-3 border-b border-white/25 space-y-2 bg-[#9E0059]/60">
               <button
                 onClick={() => {
                   setReportDeptFilter('all');
                   setViewMode('report');
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   viewMode === 'report'
-                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-sm'
-                    : 'bg-white/10 hover:bg-white/20 text-amber-300'
+                    ? 'bg-[#FDE2EF] text-[#38001E] border-2 border-white shadow-md'
+                    : 'bg-white/15 hover:bg-white/25 text-white border border-white/30'
                 }`}
               >
                 <span className="flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
                   REPORT SECTION (ALL)
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-white">
+                <span
+                  className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                    viewMode === 'report'
+                      ? 'bg-[#9E0059] text-white'
+                      : 'bg-[#7A0045] text-[#FDE2EF]'
+                  }`}
+                >
                   16 Depts
                 </span>
               </button>
@@ -408,17 +399,23 @@ export default function App() {
                   setAdminTab('users');
                   setViewMode('admin');
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   viewMode === 'admin'
-                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 shadow-sm'
-                    : 'bg-white/10 hover:bg-white/20 text-purple-100'
+                    ? 'bg-[#FDE2EF] text-[#38001E] border-2 border-white shadow-md'
+                    : 'bg-white/15 hover:bg-white/25 text-white border border-white/30'
                 }`}
               >
                 <span className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  ADMIN PANEL & USERS
+                  ADMIN PANEL &amp; USERS
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-amber-300">
+                <span
+                  className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                    viewMode === 'admin'
+                      ? 'bg-[#9E0059] text-white'
+                      : 'bg-[#7A0045] text-[#FDE2EF]'
+                  }`}
+                >
                   DB
                 </span>
               </button>
@@ -428,17 +425,17 @@ export default function App() {
           {/* Search Input for the 16 Forms */}
           {!sidebarCollapsed && (
             <div className="px-3 pt-3 pb-1.5">
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300 mb-1.5 flex items-center justify-between">
+              <div className="text-[11px] font-black uppercase tracking-wider text-[#FDE2EF] mb-1.5 flex items-center justify-between">
                 <span>ALL DEPARTMENT FORMS ({accessibleModules.length})</span>
               </div>
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-purple-300 absolute left-2.5 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-[#38001E] absolute left-2.5 top-2.5" />
                 <input
                   type="text"
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
                   placeholder="Filter forms 1 to 16..."
-                  className="w-full pl-8 pr-2.5 py-1.5 bg-white/10 border border-white/15 rounded-lg text-xs text-white placeholder-purple-300 focus:outline-none focus:border-amber-400"
+                  className="w-full pl-8 pr-2.5 py-1.5 bg-[#FDE2EF] border-2 border-[#F595C3] rounded-lg text-xs font-extrabold text-[#38001E] placeholder-[#9E0059]/70 focus:outline-none focus:border-white"
                 />
               </div>
             </div>
@@ -456,10 +453,10 @@ export default function App() {
                   key={mod.key}
                   className={`group flex items-center justify-between rounded-xl transition-all ${
                     isCurrentForm
-                      ? 'bg-gradient-to-r from-[#EA580C] to-[#9D174D] text-white font-bold shadow-sm'
+                      ? 'bg-[#FDE2EF] text-[#38001E] font-black border-2 border-white shadow-md'
                       : isCurrentReport
-                      ? 'bg-amber-500/30 border border-amber-400/50 text-white'
-                      : 'hover:bg-white/10 text-purple-100'
+                      ? 'bg-[#F9BCDA] text-[#38001E] font-black border border-white'
+                      : 'hover:bg-white/20 text-white font-extrabold'
                   }`}
                 >
                   <button
@@ -467,10 +464,14 @@ export default function App() {
                       setActiveModuleKey(mod.key);
                       setViewMode('form');
                     }}
-                    className="flex-1 flex items-center gap-2 px-3 py-2 text-left text-xs truncate cursor-pointer"
+                    className="flex-1 flex items-center gap-2 px-3 py-2 text-left text-xs font-black truncate cursor-pointer"
                     title={`Open ${mod.name} Entry Form`}
                   >
-                    <FileText className="w-3.5 h-3.5 shrink-0 text-amber-300" />
+                    <FileText
+                      className={`w-3.5 h-3.5 shrink-0 ${
+                        isCurrentForm || isCurrentReport ? 'text-[#9E0059]' : 'text-[#FDE2EF]'
+                      }`}
+                    />
                     {!sidebarCollapsed && <span className="truncate">{mod.shortName}</span>}
                   </button>
 
@@ -482,10 +483,12 @@ export default function App() {
                         setViewMode('report');
                       }}
                       title={`View ${mod.name} Report`}
-                      className={`mr-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-colors ${
+                      className={`mr-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider cursor-pointer transition-colors ${
                         isCurrentReport
-                          ? 'bg-amber-400 text-slate-950'
-                          : 'bg-black/25 hover:bg-amber-400 hover:text-slate-950 text-amber-200'
+                          ? 'bg-[#9E0059] text-white'
+                          : isCurrentForm
+                          ? 'bg-[#C90D6B] text-white hover:bg-[#9E0059]'
+                          : 'bg-[#7A0045]/80 hover:bg-[#FDE2EF] hover:text-[#38001E] text-white'
                       }`}
                     >
                       Report
@@ -497,8 +500,8 @@ export default function App() {
 
             {/* Quick Admin Sub-links at Bottom of Scroll */}
             {!sidebarCollapsed && (
-              <div className="pt-3 mt-3 border-t border-white/15 space-y-1">
-                <div className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
+              <div className="pt-3 mt-3 border-t border-white/25 space-y-1">
+                <div className="px-2 text-[10px] font-black uppercase tracking-wider text-[#FDE2EF]">
                   Admin Panel Shortcuts
                 </div>
                 <button
@@ -506,10 +509,10 @@ export default function App() {
                     setAdminTab('users');
                     setViewMode('admin');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-purple-100 hover:bg-white/10 cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-extrabold text-white hover:bg-white/20 cursor-pointer"
                 >
-                  <Users className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Users & Permissions</span>
+                  <Users className="w-3.5 h-3.5 text-[#FDE2EF]" />
+                  <span>Users &amp; Permissions</span>
                 </button>
                 <button
                   onClick={() => {
@@ -517,31 +520,21 @@ export default function App() {
                     setAdminTab('database');
                     setViewMode('admin');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-purple-100 hover:bg-white/10 cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-extrabold text-white hover:bg-white/20 cursor-pointer"
                 >
-                  <Database className="w-3.5 h-3.5 text-amber-300" />
+                  <Database className="w-3.5 h-3.5 text-[#FDE2EF]" />
                   <span>&ldquo;production&rdquo; DB Tables</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setAdminTab('ubuntu');
-                    setViewMode('admin');
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-purple-100 hover:bg-white/10 cursor-pointer"
-                >
-                  <Server className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Server 192.168.1.6:3002</span>
                 </button>
               </div>
             )}
           </div>
 
           {/* Logged-In User Footer */}
-          <div className="p-3 border-t border-white/15 bg-black/25 flex items-center justify-between gap-2">
+          <div className="p-3 border-t border-white/25 bg-[#7A0045] flex items-center justify-between gap-2">
             {!sidebarCollapsed && (
               <div className="truncate">
-                <div className="text-xs font-bold text-white truncate">{user.fullName}</div>
-                <div className="text-[11px] text-amber-300 font-mono truncate">
+                <div className="text-xs font-black text-white truncate">{user.fullName}</div>
+                <div className="text-[11px] text-[#FDE2EF] font-mono font-bold truncate">
                   @{user.username} · {user.roleName}
                 </div>
               </div>
@@ -549,7 +542,7 @@ export default function App() {
             <button
               onClick={handleLogout}
               title="Logout"
-              className="px-2.5 py-1.5 rounded-lg bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+              className="px-3 py-1.5 rounded-lg bg-[#FDE2EF] hover:bg-white text-[#9E0059] text-xs font-black flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
             >
               <LogOut className="w-3.5 h-3.5" />
               {!sidebarCollapsed && <span>Logout</span>}
@@ -560,17 +553,17 @@ export default function App() {
 
       {/* RIGHT MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar with Instant Switch between Form, Report Section, and Admin Panel */}
-        <header className="h-14 bg-white border-b border-purple-200 px-4 flex items-center justify-between gap-3 shrink-0 shadow-2xs">
+        {/* Top Bar with 8-Plate Glossy Accent & Deep Bold Text */}
+        <header className="h-14 bg-gradient-to-r from-[#FFFFFF] via-[#FDE2EF] to-[#F9BCDA] border-b-2 border-[#EC69A8] px-4 flex items-center justify-between gap-3 shrink-0 shadow-xs">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="px-2.5 py-1 rounded-md bg-purple-100 text-[#3B0764] font-extrabold text-xs">
+            <span className="px-3 py-1 rounded-md hd-gloss-btn text-white font-black text-xs tracking-wide">
               {viewMode === 'form'
                 ? activeModuleMeta.shortName
                 : viewMode === 'report'
                 ? 'REPORT SECTION'
                 : 'ADMIN PANEL'}
             </span>
-            <h2 className="text-sm font-extrabold text-[#3B0764] truncate">
+            <h2 className="text-base font-black text-[#38001E] truncate">
               {viewMode === 'form'
                 ? activeModuleMeta.name
                 : viewMode === 'report'
@@ -583,10 +576,10 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('form')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black cursor-pointer transition-all ${
                 viewMode === 'form'
-                  ? 'bg-[#3B0764] text-white'
-                  : 'border border-purple-200 text-[#3B0764] hover:bg-purple-50'
+                  ? 'hd-gloss-btn text-white'
+                  : 'bg-white border-2 border-[#EC69A8] text-[#38001E] hover:bg-[#F9BCDA]'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
@@ -598,10 +591,10 @@ export default function App() {
                 setReportDeptFilter(viewMode === 'form' ? activeModuleMeta.key : 'all');
                 setViewMode('report');
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black cursor-pointer transition-all ${
                 viewMode === 'report'
-                  ? 'bg-gradient-to-r from-[#EA580C] to-[#9D174D] text-white'
-                  : 'border border-orange-300 bg-orange-50 text-orange-800 hover:bg-orange-100'
+                  ? 'hd-gloss-btn text-white'
+                  : 'bg-white border-2 border-[#EC69A8] text-[#38001E] hover:bg-[#F9BCDA]'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -613,10 +606,10 @@ export default function App() {
                 setAdminTab('users');
                 setViewMode('admin');
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black cursor-pointer transition-all ${
                 viewMode === 'admin'
-                  ? 'bg-[#3B0764] text-white'
-                  : 'border border-purple-200 text-[#3B0764] hover:bg-purple-50'
+                  ? 'hd-gloss-btn text-white'
+                  : 'bg-white border-2 border-[#EC69A8] text-[#38001E] hover:bg-[#F9BCDA]'
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
@@ -627,14 +620,14 @@ export default function App() {
               <>
                 <button
                   onClick={() => setIframeRefreshKey((k) => k + 1)}
-                  className="p-1.5 rounded-lg border border-purple-200 hover:bg-purple-50 text-[#3B0764] cursor-pointer"
+                  className="p-1.5 rounded-lg bg-white border-2 border-[#EC69A8] hover:bg-[#F9BCDA] text-[#38001E] cursor-pointer"
                   title="Reload Form"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setFullScreenModule(!fullScreenModule)}
-                  className="p-1.5 rounded-lg border border-purple-200 hover:bg-purple-50 text-[#3B0764] cursor-pointer"
+                  className="p-1.5 rounded-lg bg-white border-2 border-[#EC69A8] hover:bg-[#F9BCDA] text-[#38001E] cursor-pointer"
                   title="Full Screen Toggle"
                 >
                   {fullScreenModule ? (
@@ -670,7 +663,7 @@ export default function App() {
             }}
           />
         ) : (
-          <div className="flex-1 w-full h-full bg-white relative">
+          <div className="flex-1 w-full h-full bg-[#FDE2EF] relative">
             <iframe
               key={`${activeModuleMeta.key}-${user.id}-${iframeRefreshKey}`}
               src={`/api/modules/${activeModuleMeta.key}/render?userId=${user.id}`}

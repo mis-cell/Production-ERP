@@ -1,10 +1,24 @@
 @import "tailwindcss";
 
+:root {
+  /* Exact 8 Colour Plates from Magenta_to_blush_palette */
+  --plate-1: #9E0059; /* Deep Royal Magenta */
+  --plate-2: #C90D6B; /* Vivid Ruby Magenta */
+  --plate-3: #E62A82; /* Bright Rose Pink */
+  --plate-4: #F35BA0; /* Warm Flamingo Pink */
+  --plate-5: #EC69A8; /* Medium Orchid Blush */
+  --plate-6: #F595C3; /* Soft Carnation Pink */
+  --plate-7: #F9BCDA; /* Pastel Petal Blush */
+  --plate-8: #FDE2EF; /* Light Silk Blush */
+  --deep-ink: #38001E; /* Deep Bold Prominent Text Color */
+}
+
 @layer base {
   body {
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #f8fafc;
-    color: #0f172a;
+    font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--plate-8);
+    color: var(--deep-ink);
+    font-weight: 700;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
@@ -12,14 +26,82 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 900;
     letter-spacing: -0.02em;
+  }
+
+  label, th, td, input, select, textarea, button {
+    font-weight: 800;
   }
 
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
   }
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* HD Glossy Surface Utilities using the 8 Colour Plates */
+.hd-gloss-banner {
+  background: linear-gradient(
+    135deg,
+    #9E0059 0%,
+    #C90D6B 42%,
+    #E62A82 78%,
+    #F35BA0 100%
+  );
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.42),
+    inset 0 -3px 8px rgba(74, 0, 40, 0.45),
+    0 12px 28px -6px rgba(158, 0, 89, 0.38);
+}
+
+.hd-gloss-sidebar {
+  background: linear-gradient(
+    180deg,
+    #7A0045 0%,
+    #9E0059 38%,
+    #C90D6B 78%,
+    #E62A82 100%
+  );
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.25),
+    6px 0 24px rgba(158, 0, 89, 0.28);
+}
+
+.hd-gloss-btn {
+  background: linear-gradient(
+    180deg,
+    #E62A82 0%,
+    #C90D6B 52%,
+    #9E0059 100%
+  );
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
+    0 4px 12px rgba(158, 0, 89, 0.35);
+}
+
+.hd-gloss-btn:hover {
+  background: linear-gradient(
+    180deg,
+    #F35BA0 0%,
+    #E62A82 50%,
+    #C90D6B 100%
+  );
+}
+
+.hd-gloss-card {
+  background: linear-gradient(
+    180deg,
+    #FFFFFF 0%,
+    #FFF7FB 65%,
+    #FDE2EF 100%
+  );
+  border: 2px solid #F595C3;
+  box-shadow:
+    inset 0 1px 0 #FFFFFF,
+    0 8px 22px -6px rgba(158, 0, 89, 0.16);
 }

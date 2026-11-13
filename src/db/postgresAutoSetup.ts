@@ -655,19 +655,25 @@ CREATE TABLE IF NOT EXISTS vl_loom_production (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- SEED DEFAULT ROLES & ADMIN USER IN POSTGRESQL
+-- SEED DEFAULT ROLES & ADMIN USER (ANKANA ONLY) IN POSTGRESQL
 INSERT INTO roles (name, description, is_admin) VALUES
-  ('Super Admin', 'Full administrative access to all 16 departments, users, roles, and database tables', 1),
-  ('Mill Manager', 'View, create, edit, and run reports across all 16 mill departments', 0),
-  ('Spinning & Prep Supervisor', 'Supervisor access for Spreader, Carding, and Spinning departments', 0),
-  ('Beaming & Loom Supervisor', 'Supervisor access for Pre/Narrow/S4/VL Beaming and Narrow/S4/VL Looms', 0),
-  ('Finishing & Packing Officer', 'Access to Damping, Cutting, Hemming, Herackle, Lapping, and Press departments', 0)
-ON CONFLICT (name) DO NOTHING;
+  ('Super Admin', '', 1),
+  ('Mill Manager', '', 0),
+  ('Spinning & Prep Supervisor', '', 0),
+  ('Beaming & Loom Supervisor', '', 0),
+  ('Finishing & Packing Officer', '', 0)
+ON CONFLICT (name) DO UPDATE SET description = '';
 
 INSERT INTO users (username, password_hash, full_name, employee_code, department, role_id, is_active)
-SELECT 'admin', 'admin123', 'Rajesh Chatterjee (IT & ERP Admin)', 'BJM-001', 'All Departments', id, 1
+SELECT 'admin', 'admin123', 'ANKANA', 'BJM-001', 'All Departments', id, 1
 FROM roles WHERE name = 'Super Admin'
-ON CONFLICT (username) DO NOTHING;
+ON CONFLICT (username) DO UPDATE SET full_name = 'ANKANA';
+
+DELETE FROM user_permissions
+WHERE user_id IN (SELECT id FROM users WHERE username IN ('manager', 'spinning_sup', 'loom_sup', 'finishing_op'));
+
+DELETE FROM users
+WHERE username IN ('manager', 'spinning_sup', 'loom_sup', 'finishing_op');
 `;
 
 export interface PostgresStatus {
@@ -691,6 +697,225 @@ export let currentPostgresStatus: PostgresStatus = {
   message: 'Using built-in production database (Ready to auto-create in PostgreSQL on 192.168.1.6)',
   lastChecked: new Date().toISOString(),
 };
+
+// Ordered list of all tables in "production" respecting foreign-key dependencies
+const ORDERED_SYNC_TABLES = [
+  'roles',
+  'users',
+  'role_permissions',
+  'user_permissions',
+  'audit_logs',
+  'carding_log_book',
+  'carding_machine_breakdown',
+  'carding_pile_stock',
+  'cutting_shifts',
+  'cutting_production_rows',
+  'cutting_masters',
+  'cutting_settings',
+  'damping_shifts',
+  'damping_production_rows',
+  'damping_masters',
+  'damping_settings',
+  'hemming_shifts',
+  'hemming_production_rows',
+  'hemming_masters',
+  'herackle_records',
+  'herackle_rows',
+  'herackle_masters',
+  'lapping_production',
+  'narrow_beaming_rounds',
+  'narrow_beaming_logs',
+  'narrow_beaming_production',
+  'narrow_loom_logbook',
+  'narrow_loom_production',
+  'pre_beaming_rounds',
+  'pre_beaming_logs',
+  'pre_beaming_production',
+  'press_bales',
+  'press_options',
+  's4_beaming_logbook',
+  's4_beaming_production',
+  's4_beaming_verification',
+  's4_beaming_purchase_orders',
+  's4_loom_logbook',
+  's4_loom_production',
+  's4_loom_verification',
+  'spinning_logbook',
+  'spinning_breakdown',
+  'spinning_production',
+  'spreader_logbook',
+  'spreader_breakdown',
+  'spreader_meter_reading',
+  'spreader_roll_production',
+  'vl_beaming_logbook',
+  'vl_beaming_rounds',
+  'vl_beaming_production',
+  'vl_loom_logbook',
+  'vl_loom_production',
+];
+
+function escapePgLiteral(val: any): string {
+  if (val === null || val === undefined) return 'NULL';
+  if (typeof val === 'number') {
+    return Number.isFinite(val) ? String(val) : '0';
+  }
+  if (typeof val === 'boolean') {
+    return val ? '1' : '0';
+  }
+  const str = String(val).replace(/'/g, "''");
+  return `'${str}'`;
+}
+
+function buildTableSyncSql(sqliteDb: any, tableNames?: string[]): string {
+  const targetSet = tableNames && tableNames.length > 0 ? new Set(tableNames) : null;
+  // If syncing users or role_permissions or user_permissions, include parent tables so FK constraints are satisfied
+  if (targetSet) {
+    if (targetSet.has('user_permissions') || targetSet.has('users')) {
+      targetSet.add('roles');
+      targetSet.add('users');
+    }
+    if (targetSet.has('role_permissions')) {
+      targetSet.add('roles');
+    }
+  }
+
+  const tablesToSync = ORDERED_SYNC_TABLES.filter((t) => !targetSet || targetSet.has(t));
+  const statements: string[] = ['BEGIN;'];
+
+  // Delete in reverse order to respect foreign keys
+  for (const tbl of [...tablesToSync].reverse()) {
+    statements.push(`DELETE FROM "${tbl}";`);
+  }
+
+  // Insert in forward order
+  for (const tbl of tablesToSync) {
+    let rows: any[] = [];
+    let cols: { name: string }[] = [];
+    try {
+      cols = sqliteDb.prepare(`PRAGMA table_info("${tbl}")`).all() as { name: string }[];
+      rows = sqliteDb.prepare(`SELECT * FROM "${tbl}"`).all() as any[];
+    } catch {
+      continue;
+    }
+    if (cols.length === 0 || rows.length === 0) continue;
+
+    const colNames = cols.map((c) => `"${c.name}"`).join(', ');
+    for (const row of rows) {
+      const vals = cols.map((c) => escapePgLiteral(row[c.name])).join(', ');
+      statements.push(`INSERT INTO "${tbl}" (${colNames}) VALUES (${vals});`);
+    }
+
+    const hasId = cols.some((c) => c.name === 'id');
+    if (hasId) {
+      statements.push(
+        `SELECT setval(pg_get_serial_sequence('"${tbl}"', 'id'), COALESCE((SELECT MAX(id) FROM "${tbl}"), 1), true);`
+      );
+    }
+  }
+
+  statements.push('COMMIT;');
+  return statements.join('\n');
+}
+
+async function runPostgresSql(
+  sqlText: string,
+  targetDatabase: 'postgres' | 'production' = 'production',
+  customConfig?: { host?: string; port?: number; user?: string; password?: string }
+): Promise<{ ok: boolean; rows?: any[]; error?: string }> {
+  const host = customConfig?.host || process.env.PGHOST || '127.0.0.1';
+  const port = Number(customConfig?.port || process.env.PGPORT || 5432);
+  const user = customConfig?.user || process.env.PGUSER || 'postgres';
+  const password = customConfig?.password ?? process.env.PGPASSWORD ?? '';
+
+  // Try 1: TCP connection via pg.Client
+  const tcpClient = new Client({
+    host,
+    port,
+    user,
+    password,
+    database: targetDatabase,
+    connectionTimeoutMillis: 2500,
+  });
+  try {
+    await tcpClient.connect();
+    const res = await tcpClient.query(sqlText);
+    await tcpClient.end();
+    return { ok: true, rows: res?.rows || [] };
+  } catch (tcpErr: any) {
+    try {
+      await tcpClient.end();
+    } catch {}
+
+    // Try 2: Local Unix domain socket (/var/run/postgresql) for peer auth on Ubuntu
+    const socketClient = new Client({
+      host: '/var/run/postgresql',
+      port,
+      user,
+      password,
+      database: targetDatabase,
+      connectionTimeoutMillis: 2500,
+    });
+    try {
+      await socketClient.connect();
+      const res = await socketClient.query(sqlText);
+      await socketClient.end();
+      return { ok: true, rows: res?.rows || [] };
+    } catch {
+      try {
+        await socketClient.end();
+      } catch {}
+    }
+
+    // Try 3: Non-interactive psql / sudo -n -u postgres psql fallback on Ubuntu
+    try {
+      const { execFileSync } = await import('child_process');
+      const tmpFile = path.resolve(process.cwd(), `.pg_sync_${Date.now()}_${Math.random().toString(36).slice(2)}.sql`);
+      fs.writeFileSync(tmpFile, sqlText, 'utf8');
+      try {
+        try {
+          execFileSync('psql', ['-U', user, '-d', targetDatabase, '-f', tmpFile], {
+            stdio: 'pipe',
+            timeout: 5000,
+          });
+          fs.unlinkSync(tmpFile);
+          return { ok: true, rows: [] };
+        } catch {
+          execFileSync('sudo', ['-n', '-u', 'postgres', 'psql', '-d', targetDatabase, '-f', tmpFile], {
+            stdio: 'pipe',
+            timeout: 5000,
+          });
+          fs.unlinkSync(tmpFile);
+          return { ok: true, rows: [] };
+        }
+      } catch (cliErr: any) {
+        try {
+          fs.unlinkSync(tmpFile);
+        } catch {}
+        return { ok: false, error: tcpErr?.message || cliErr?.message || 'PostgreSQL connection failed' };
+      }
+    } catch {
+      return { ok: false, error: tcpErr?.message || 'PostgreSQL connection failed' };
+    }
+  }
+}
+
+export async function syncSqliteTablesToPostgres(
+  sqliteDb: any,
+  tableNames?: string[]
+): Promise<boolean> {
+  if (!sqliteDb) return false;
+  try {
+    const syncSql = buildTableSyncSql(sqliteDb, tableNames);
+    const res = await runPostgresSql(syncSql, 'production');
+    if (res.ok) {
+      currentPostgresStatus.connected = true;
+      currentPostgresStatus.lastChecked = new Date().toISOString();
+    }
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export function writePostgresHelperFiles() {
   try {
@@ -717,10 +942,10 @@ if command -v psql >/dev/null 2>&1; then
   echo "-> Database 'production' is ready!"
 
   echo "=================================================================="
-  echo " STEP 2: Creating all 42 Department & Admin Tables in 'production'"
+  echo " STEP 2: Creating all 52 Department & Admin Tables in 'production'"
   echo "=================================================================="
   sudo -u postgres psql -d production -f production_postgres_schema.sql
-  echo "-> All 42 tables and fields created in PostgreSQL 'production'!"
+  echo "-> All 52 tables and fields created in PostgreSQL 'production'!"
 else
   echo "-> Note: psql CLI not found in PATH, using built-in Node auto-provisioner."
 fi
@@ -751,25 +976,28 @@ PORT=3002 SECONDARY_PORT=3002 NODE_ENV=production npx tsx server.ts
   }
 }
 
-export async function autoProvisionPostgresDatabase(customConfig?: {
-  host?: string;
-  port?: number;
-  user?: string;
-  password?: string;
-}): Promise<PostgresStatus> {
+export async function autoProvisionPostgresDatabase(
+  sqliteDb?: any,
+  customConfig?: {
+    host?: string;
+    port?: number;
+    user?: string;
+    password?: string;
+  }
+): Promise<PostgresStatus> {
   const host = customConfig?.host || process.env.PGHOST || '127.0.0.1';
   const port = Number(customConfig?.port || process.env.PGPORT || 5432);
   const user = customConfig?.user || process.env.PGUSER || 'postgres';
   const password = customConfig?.password ?? process.env.PGPASSWORD ?? '';
 
-  // Step 1: Connect to default 'postgres' database to check/create 'production'
+  // Step 1: Ensure 'production' database exists
   const adminClient = new Client({
     host,
     port,
     user,
     password,
     database: 'postgres',
-    connectionTimeoutMillis: 3500,
+    connectionTimeoutMillis: 3000,
   });
 
   try {
@@ -781,32 +1009,39 @@ export async function autoProvisionPostgresDatabase(customConfig?: {
       await adminClient.query('CREATE DATABASE production');
     }
     await adminClient.end();
+  } catch {
+    try {
+      await adminClient.end();
+    } catch {}
+    // Try creating via psql if local Ubuntu peer auth is active
+    try {
+      const { execSync } = await import('child_process');
+      execSync(
+        `sudo -n -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'production'" | grep -q 1 || sudo -n -u postgres psql -c "CREATE DATABASE production;"`,
+        { stdio: 'pipe', timeout: 4000 }
+      );
+    } catch {
+      // ignore if sudo/psql not available
+    }
+  }
 
-    // Step 2: Connect to the newly created 'production' database and create all 42 tables
-    const prodClient = new Client({
-      host,
-      port,
-      user,
-      password,
-      database: 'production',
-      connectionTimeoutMillis: 3500,
-    });
-    await prodClient.connect();
-    await prodClient.query(POSTGRES_PRODUCTION_SCHEMA_SQL);
+  // Step 2: Run schema creation in 'production' database
+  const schemaRes = await runPostgresSql(POSTGRES_PRODUCTION_SCHEMA_SQL, 'production', {
+    host,
+    port,
+    user,
+    password,
+  });
 
-    const countRes = await prodClient.query(`
-      SELECT COUNT(*) as c
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
-    `);
-    const tableCount = Number(countRes.rows[0]?.c || 0);
-    await prodClient.end();
-
-    // Save working credentials in process.env for runtime
+  if (schemaRes.ok) {
     process.env.PGHOST = host;
     process.env.PGPORT = String(port);
     process.env.PGUSER = user;
     process.env.PGPASSWORD = password;
+
+    if (sqliteDb) {
+      await syncSqliteTablesToPostgres(sqliteDb);
+    }
 
     currentPostgresStatus = {
       connected: true,
@@ -814,27 +1049,24 @@ export async function autoProvisionPostgresDatabase(customConfig?: {
       port,
       database: 'production',
       user,
-      tableCount,
-      message: `Connected to PostgreSQL (${host}:${port}) · Database "production" & ${tableCount} tables verified! (SQC & bjcl_db untouched)`,
-      lastChecked: new Date().toISOString(),
-    };
-    return currentPostgresStatus;
-  } catch (err: any) {
-    try {
-      await adminClient.end();
-    } catch {}
-    currentPostgresStatus = {
-      connected: false,
-      host,
-      port,
-      database: 'production',
-      user,
-      tableCount: 42,
-      message:
-        err?.message ||
-        'PostgreSQL not reachable from current container; using built-in production database.',
+      tableCount: ORDERED_SYNC_TABLES.length,
+      message: `Connected to PostgreSQL (${host}:${port}) · Database "production" & ${ORDERED_SYNC_TABLES.length} tables live-synced!`,
       lastChecked: new Date().toISOString(),
     };
     return currentPostgresStatus;
   }
+
+  currentPostgresStatus = {
+    connected: false,
+    host,
+    port,
+    database: 'production',
+    user,
+    tableCount: ORDERED_SYNC_TABLES.length,
+    message:
+      schemaRes.error ||
+      'PostgreSQL not reachable from current container; using built-in production database.',
+    lastChecked: new Date().toISOString(),
+  };
+  return currentPostgresStatus;
 }

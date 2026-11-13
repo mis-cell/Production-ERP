@@ -885,24 +885,88 @@ echo "=== Bally Jute Mill ERP is live at http://192.168.1.6:3002 ==="
   }
 
   seedInitialData();
-  ensureAllDepartmentSampleRows();
+  db.prepare("UPDATE roles SET description = ''").run();
+  cleanupLegacyDummyDataOnce();
 }
 
-function ensureAllDepartmentSampleRows() {
-  const today = new Date().toISOString().slice(0, 10);
-  const nlCount = (db.prepare('SELECT COUNT(*) as c FROM narrow_loom_production').get() as { c: number }).c;
-  if (nlCount === 0) {
+function cleanupLegacyDummyDataOnce() {
+  // Always ensure primary admin account is ANKANA
+  db.prepare("UPDATE users SET full_name = 'ANKANA' WHERE LOWER(username) = 'admin'").run();
+
+  // Always remove the 4 legacy dummy users if present
+  const dummyUsernames = ['manager', 'spinning_sup', 'loom_sup', 'finishing_op'];
+  const placeholders = dummyUsernames.map(() => '?').join(',');
+  db.prepare(`
+    DELETE FROM user_permissions
+    WHERE user_id IN (SELECT id FROM users WHERE username IN (${placeholders}))
+  `).run(...dummyUsernames);
+  db.prepare(`DELETE FROM users WHERE username IN (${placeholders})`).run(...dummyUsernames);
+
+  // Clean up seeded dummy production rows once so only real user-entered data remains
+  const flag = db
+    .prepare("SELECT setting_value FROM cutting_settings WHERE setting_key = '__dummy_cleaned_v1'")
+    .get() as { setting_value: string } | undefined;
+
+  if (!flag) {
+    const dummyTablesToClear = [
+      'carding_log_book',
+      'carding_machine_breakdown',
+      'carding_pile_stock',
+      'cutting_shifts',
+      'cutting_production_rows',
+      'cutting_masters',
+      'damping_shifts',
+      'damping_production_rows',
+      'damping_masters',
+      'hemming_shifts',
+      'hemming_production_rows',
+      'hemming_masters',
+      'herackle_records',
+      'herackle_rows',
+      'herackle_masters',
+      'lapping_production',
+      'narrow_beaming_rounds',
+      'narrow_beaming_logs',
+      'narrow_beaming_production',
+      'narrow_loom_logbook',
+      'narrow_loom_production',
+      'pre_beaming_rounds',
+      'pre_beaming_logs',
+      'pre_beaming_production',
+      'press_bales',
+      'press_options',
+      's4_beaming_logbook',
+      's4_beaming_production',
+      's4_beaming_verification',
+      's4_beaming_purchase_orders',
+      's4_loom_logbook',
+      's4_loom_production',
+      's4_loom_verification',
+      'spinning_logbook',
+      'spinning_breakdown',
+      'spinning_production',
+      'spreader_logbook',
+      'spreader_breakdown',
+      'spreader_meter_reading',
+      'spreader_roll_production',
+      'vl_beaming_logbook',
+      'vl_beaming_rounds',
+      'vl_beaming_production',
+      'vl_loom_logbook',
+      'vl_loom_production',
+    ];
+    for (const tbl of dummyTablesToClear) {
+      try {
+        db.prepare(`DELETE FROM "${tbl}"`).run();
+      } catch {
+        // ignore
+      }
+    }
     db.prepare(`
-      INSERT INTO narrow_loom_production (entry_date, shift, loom_no, quality, cuts, meters, efficiency, weaver_name, raw_json)
-      VALUES (?, 'A', 'NL-01', 'Hessian 40x10', 6.5, 650, 88.4, 'Sanjay Paswan', '{}')
-    `).run(today);
-  }
-  const vlbCount = (db.prepare('SELECT COUNT(*) as c FROM vl_beaming_production').get() as { c: number }).c;
-  if (vlbCount === 0) {
-    db.prepare(`
-      INSERT INTO vl_beaming_production (round_no, entry_date, shift, machine_no, beam_no, quality, cuts, meters, operator_name, verified, raw_json)
-      VALUES ('VLR-101', ?, 'A', 'VLB-01', 'VB-14', 'Hessian 40x10', 18, 1800, 'B. K. Shaw', 1, '{}')
-    `).run(today);
+      INSERT INTO cutting_settings (setting_key, setting_value)
+      VALUES ('__dummy_cleaned_v1', '1')
+      ON CONFLICT(setting_key) DO UPDATE SET setting_value = '1'
+    `).run();
   }
 }
 
@@ -910,26 +974,24 @@ function seedInitialData() {
   const roleCount = (db.prepare('SELECT COUNT(*) as c FROM roles').get() as { c: number }).c;
   if (roleCount > 0) return;
 
-  const today = new Date().toISOString().slice(0, 10);
-
   // 1. Seed Roles
   const insertRole = db.prepare(
     'INSERT INTO roles (name, description, is_admin) VALUES (?, ?, ?)'
   );
   const superAdminRoleId = Number(
-    insertRole.run('Super Admin', 'Full administrative access to all 16 departments, users, roles, and database tables', 1).lastInsertRowid
+    insertRole.run('Super Admin', '', 1).lastInsertRowid
   );
   const millManagerRoleId = Number(
-    insertRole.run('Mill Manager', 'View, create, edit, and run reports across all 16 mill departments', 0).lastInsertRowid
+    insertRole.run('Mill Manager', '', 0).lastInsertRowid
   );
   const spinningSupRoleId = Number(
-    insertRole.run('Spinning & Prep Supervisor', 'Supervisor access for Spreader, Carding, and Spinning departments', 0).lastInsertRowid
+    insertRole.run('Spinning & Prep Supervisor', '', 0).lastInsertRowid
   );
   const beamingWeavingRoleId = Number(
-    insertRole.run('Beaming & Loom Supervisor', 'Supervisor access for Pre/Narrow/S4/VL Beaming and Narrow/S4/VL Looms', 0).lastInsertRowid
+    insertRole.run('Beaming & Loom Supervisor', '', 0).lastInsertRowid
   );
   const finishingRoleId = Number(
-    insertRole.run('Finishing & Packing Officer', 'Access to Damping, Cutting, Hemming, Herackle, Lapping, and Press departments', 0).lastInsertRowid
+    insertRole.run('Finishing & Packing Officer', '', 0).lastInsertRowid
   );
 
   // 2. Seed Role Permissions for all 16 modules
@@ -954,211 +1016,12 @@ function seedInitialData() {
     insertRolePerm.run(finishingRoleId, mod.key, isFinish ? 1 : 0, isFinish ? 1 : 0, isFinish ? 1 : 0, 0, isFinish ? 1 : 0);
   }
 
-  // 3. Seed Users
+  // 3. Seed ONLY the Admin user (ANKANA) - No dummy users or dummy sample rows
   const insertUser = db.prepare(`
     INSERT INTO users (username, password_hash, full_name, employee_code, department, role_id, is_active)
     VALUES (?, ?, ?, ?, ?, ?, 1)
   `);
-  insertUser.run('admin', 'admin123', 'Rajesh Chatterjee (IT & ERP Admin)', 'BJM-001', 'All Departments', superAdminRoleId);
-  insertUser.run('manager', '1234', 'Subir Mukherjee (GM Works)', 'BJM-010', 'All Departments', millManagerRoleId);
-  const spinUserId = Number(
-    insertUser.run('spinning_sup', '1234', 'Amitava Ghosh (Spinning Incharge)', 'BJM-104', 'Spinning & Prep', spinningSupRoleId).lastInsertRowid
-  );
-  const beamUserId = Number(
-    insertUser.run('loom_sup', '1234', 'Debashis Roy (Weaving Master)', 'BJM-208', 'Beaming & Looms', beamingWeavingRoleId).lastInsertRowid
-  );
-  insertUser.run('finishing_op', '1234', 'Prabir Sen (Finishing Supervisor)', 'BJM-312', 'Finishing & Packing', finishingRoleId);
-
-  // Example User-Level Permission Override: Grant 'spinning_sup' report/view access to 's4_beaming' even though role is Spinning
-  const insertUserPerm = db.prepare(`
-    INSERT INTO user_permissions (user_id, module_key, override_mode, can_view, can_create, can_edit, can_delete, can_report)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  insertUserPerm.run(spinUserId, 's4_beaming', 'grant', 1, 0, 0, 0, 1);
-  insertUserPerm.run(beamUserId, 'press', 'grant', 1, 1, 0, 0, 1);
-
-  // 4. Seed realistic sample rows in the 16 department tables
-  db.prepare(`
-    INSERT INTO carding_log_book (entry_date, shift, machine_type, machine_no, quality, operator_name, production_mt, remarks, raw_json)
-    VALUES (?, 'Shift A', 'Breaker Card', 'BC-01', 'B.Twill Warp', 'Ratan Das', 4.85, 'Running normal', ?)
-  `).run(today, JSON.stringify({ date: today, shift: 'Shift A', machineType: 'Breaker Card', machineNo: 'BC-01', quality: 'B.Twill Warp', operator: 'Ratan Das', production: 4.85 }));
-
-  db.prepare(`
-    INSERT INTO carding_machine_breakdown (entry_date, shift, machine_no, stop_time, start_time, duration_mins, reason, raw_json)
-    VALUES (?, 'Shift A', 'FC-04', '08:15', '08:50', 35, 'Drawing Roller Bearing Change', ?)
-  `).run(today, JSON.stringify({ date: today, shift: 'Shift A', machineNo: 'FC-04', stopTime: '08:15', startTime: '08:50', duration: 35, reason: 'Drawing Roller Bearing Change' }));
-
-  db.prepare(`
-    INSERT INTO carding_pile_stock (entry_date, shift, pile_type, opening_stock, received_qty, consumed_qty, closing_stock, raw_json)
-    VALUES (?, 'Shift A', 'TD-4 Sacking Pile', 42.5, 18.0, 15.2, 45.3, ?)
-  `).run(today, JSON.stringify({ date: today, shift: 'Shift A', pileType: 'TD-4 Sacking Pile', opening: 42.5, received: 18.0, consumed: 15.2, closing: 45.3 }));
-
-  // Seed Cutting, Damping, Hemming, Herackle masters & shifts
-  const cuttingInit = {
-    qualities: ['B.Twill 945g', 'B.Twill 665g', 'A.Twill 1190g', 'Hessian 40x10', 'L.Twill', 'D.W. Flour'],
-    machines: ['CM-01', 'CM-02', 'CM-03', 'CM-04', 'CM-05', 'CM-06', 'CM-07', 'CM-08'],
-    supervisors: ['S. K. Mondal', 'P. Chakraborty', 'B. Halder'],
-    operators: ['Raju Singh', 'Manoj Shaw', 'Kartick Das', 'Dilip Kumar', 'Gopal Roy'],
-  };
-  for (const q of cuttingInit.qualities) {
-    db.prepare('INSERT INTO cutting_masters (category, code, name) VALUES (?, ?, ?)').run('quality', q, q);
-    db.prepare('INSERT INTO damping_masters (category, code, name) VALUES (?, ?, ?)').run('quality', q, q);
-    db.prepare('INSERT INTO hemming_masters (category, code, name) VALUES (?, ?, ?)').run('quality', q, q);
-    db.prepare('INSERT INTO herackle_masters (category, name) VALUES (?, ?)').run('quality', q);
-  }
-  for (const m of cuttingInit.machines) {
-    db.prepare('INSERT INTO cutting_masters (category, code, name) VALUES (?, ?, ?)').run('machine', m, m);
-    db.prepare('INSERT INTO damping_masters (category, code, name) VALUES (?, ?, ?)').run('machine', m, m);
-    db.prepare('INSERT INTO hemming_masters (category, code, name) VALUES (?, ?, ?)').run('machine', m, m);
-    db.prepare('INSERT INTO herackle_masters (category, name) VALUES (?, ?)').run('machine', m);
-  }
-  for (const s of cuttingInit.supervisors) {
-    db.prepare('INSERT INTO cutting_masters (category, code, name) VALUES (?, ?, ?)').run('supervisor', s, s);
-    db.prepare('INSERT INTO damping_masters (category, code, name) VALUES (?, ?, ?)').run('supervisor', s, s);
-    db.prepare('INSERT INTO hemming_masters (category, code, name) VALUES (?, ?, ?)').run('supervisor', s, s);
-  }
-
-  db.prepare(`
-    INSERT INTO cutting_shifts (shift_date, shift_name, supervisor, attendance_count, total_cuts, total_mt, payload_json)
-    VALUES (?, 'A', 'S. K. Mondal', 24, 380, 14.6, ?)
-  `).run(today, JSON.stringify({
-    date: today,
-    shift: 'A',
-    supervisor: 'S. K. Mondal',
-    attendance: 24,
-    totalCuts: 380,
-    totalMt: 14.6,
-    rows: [
-      { machine: 'CM-01', quality: 'B.Twill 945g', cuts: 195, mt: 7.5, operator: 'Raju Singh' },
-      { machine: 'CM-02', quality: 'B.Twill 665g', cuts: 185, mt: 7.1, operator: 'Manoj Shaw' },
-    ],
-  }));
-
-  db.prepare(`
-    INSERT INTO damping_shifts (shift_date, shift_name, supervisor, total_rolls, total_weight, payload_json)
-    VALUES (?, 'A', 'P. Chakraborty', 64, 16.2, ?)
-  `).run(today, JSON.stringify({
-    date: today,
-    shift: 'A',
-    supervisor: 'P. Chakraborty',
-    totalRolls: 64,
-    totalWeight: 16.2,
-    rows: [
-      { machine: 'DM-01', quality: 'B.Twill 945g', rolls: 34, weight: 8.6 },
-      { machine: 'DM-02', quality: 'Hessian 40x10', rolls: 30, weight: 7.6 },
-    ],
-  }));
-
-  db.prepare(`
-    INSERT INTO hemming_shifts (shift_date, shift_name, supervisor, total_bags, total_mt, payload_json)
-    VALUES (?, 'A', 'B. Halder', 18500, 12.4, ?)
-  `).run(today, JSON.stringify({
-    date: today,
-    shift: 'A',
-    supervisor: 'B. Halder',
-    totalBags: 18500,
-    totalMt: 12.4,
-    rows: [
-      { machine: 'HM-01', quality: 'B.Twill 945g', bags: 9500, mt: 6.4 },
-      { machine: 'HM-02', quality: 'B.Twill 665g', bags: 9000, mt: 6.0 },
-    ],
-  }));
-
-  db.prepare(`
-    INSERT INTO herackle_records (record_date, shift_name, supervisor, total_qty, total_weight, payload_json)
-    VALUES (?, 'A', 'S. K. Mondal', 16400, 11.8, ?)
-  `).run(today, JSON.stringify({
-    date: today,
-    shift: 'A',
-    supervisor: 'S. K. Mondal',
-    totalQty: 16400,
-    totalWeight: 11.8,
-    rows: [
-      { machine: 'HK-01', quality: 'B.Twill 945g', qty: 8400, weight: 6.1 },
-      { machine: 'HK-02', quality: 'A.Twill 1190g', qty: 8000, weight: 5.7 },
-    ],
-  }));
-
-  db.prepare(`
-    INSERT INTO lapping_production (entry_date, shift, machine_no, operator_name, quality, cuts, meters, weight_kg, raw_json)
-    VALUES (?, 'Shift A', 'LP-01', 'Bikash Yadav', 'B.Twill 945g', 142, 9230, 4120, ?)
-  `).run(today, JSON.stringify({ date: today, shift: 'Shift A', machineNo: 'LP-01', operator: 'Bikash Yadav', quality: 'B.Twill 945g', cuts: 142, meters: 9230, weightKg: 4120 }));
-
-  db.prepare(`
-    INSERT INTO narrow_beaming_rounds (round_id, machine_no, quality, status, total_cuts, total_meters, raw_json)
-    VALUES ('NBR-2025-01', 'NB-01', 'Hessian 40x10', 'OPEN', 28, 2800, '{}')
-  `).run();
-
-  db.prepare(`
-    INSERT INTO narrow_beaming_production (round_id, entry_date, shift, machine_no, beam_no, quality, cuts, meters, operator_name, verified, raw_json)
-    VALUES ('NBR-2025-01', ?, 'A', 'NB-01', 'BM-104', 'Hessian 40x10', 14, 1400, 'Sunil Paswan', 1, '{}')
-  `).run(today);
-
-  db.prepare(`
-    INSERT INTO pre_beaming_rounds (round_id, machine_no, quality, status, total_beams, total_meters, raw_json)
-    VALUES ('PBR-2025-01', 'PB-01', 'B.Twill Warp', 'OPEN', 6, 4200, '{}')
-  `).run();
-
-  db.prepare(`
-    INSERT INTO pre_beaming_production (round_id, entry_date, shift, machine_no, beam_no, quality, meters, weight_kg, operator_name, verified, raw_json)
-    VALUES ('PBR-2025-01', ?, 'A', 'PB-01', 'PB-88', 'B.Twill Warp', 1800, 620, 'Kishore Mahato', 1, '{}')
-  `).run(today);
-
-  // Press Department seed
-  const pressQualities = ['B.Twill 945g (500 Bags)', 'B.Twill 665g (500 Bags)', 'A.Twill 1190g (400 Bags)', 'Hessian 40x10 (2000 Yds)'];
-  for (const pq of pressQualities) {
-    db.prepare('INSERT INTO press_options (option_type, option_value) VALUES (?, ?)').run('quality', pq);
-  }
-  for (const pr of ['Press-1', 'Press-2', 'Press-3', 'Hydraulic-4']) {
-    db.prepare('INSERT INTO press_options (option_type, option_value) VALUES (?, ?)').run('press', pr);
-  }
-  db.prepare(`
-    INSERT INTO press_bales (bale_serial, entry_date, shift, press_no, quality, buyer_mark, bags_per_bale, gross_wt_kg, tare_wt_kg, net_wt_kg, raw_json)
-    VALUES ('BJM-00101', ?, 'A', 'Press-1', 'B.Twill 945g (500 Bags)', 'FCI PUNJAB', 500, 478.5, 6.0, 472.5, ?)
-  `).run(today, JSON.stringify({ serial: 'BJM-00101', date: today, shift: 'A', press: 'Press-1', quality: 'B.Twill 945g (500 Bags)', buyer: 'FCI PUNJAB', bags: 500, gross: 478.5, tare: 6.0, net: 472.5 }));
-
-  // S4 Beaming seed
-  db.prepare(`
-    INSERT INTO s4_beaming_purchase_orders (po_number, order_color, quality, target_meters, produced_meters, status)
-    VALUES
-      ('PO-2025-881', 'Blue Stripe', 'B.Twill 945g', 45000, 18400, 'ACTIVE'),
-      ('PO-2025-882', 'Red Double', 'B.Twill 665g', 32000, 14200, 'ACTIVE'),
-      ('PO-2025-883', 'Green Plain', 'Hessian 40x10', 25000, 9800, 'ACTIVE')
-  `).run();
-
-  db.prepare(`
-    INSERT INTO s4_beaming_production (entry_date, shift, machine_no, round_no, beam_no, order_color, meters, cuts, operator_name, raw_json)
-    VALUES (?, 'A', 'S4B-01', 'R-101', 'B-401', 'Blue Stripe', 2450, 24.5, 'Tapan Ghosh', '{}')
-  `).run(today);
-
-  // S4 Loom seed
-  db.prepare(`
-    INSERT INTO s4_loom_production (entry_date, shift, loom_no, quality, opening_reading, closing_reading, net_meters, cuts, raw_json)
-    VALUES (?, 'A', '1', 'B.Twill 945g', 12400, 12760, 360, 3.6, '{}')
-  `).run(today);
-
-  // Spinning seed
-  db.prepare(`
-    INSERT INTO spinning_production (entry_date, shift, frame_no, quality_count, doffs, production_kg, efficiency, raw_json)
-    VALUES (?, 'Shift A', 'SF-01', '8 lbs Warp', 6, 485, 86.5, '{}')
-  `).run(today);
-
-  // Spreader seed
-  db.prepare(`
-    INSERT INTO spreader_roll_production (entry_date, shift, machine_no, quality, rolls_count, weight_mt, raw_json)
-    VALUES (?, 'Shift A', 'SP-01', 'TD-4 Warp Mix', 92, 9.65, '{}')
-  `).run(today);
-
-  // VL Beaming & VL Loom seed
-  db.prepare(`
-    INSERT INTO vl_beaming_rounds (round_no, machine_no, quality, status, total_meters, raw_json)
-    VALUES ('VLR-101', 'VLB-01', 'Hessian 40x10', 'OPEN', 3100, '{}')
-  `).run();
-
-  db.prepare(`
-    INSERT INTO vl_loom_production (entry_date, shift, loom_no, quality, cuts, meters, weaver_name, raw_json)
-    VALUES (?, 'A', 'VL-01', 'Hessian 40x10', 4.5, 450, 'Naresh Paswan', '{}')
-  `).run(today);
+  insertUser.run('admin', 'admin123', 'ANKANA', 'BJM-001', 'All Departments', superAdminRoleId);
 }
 
 export interface EffectiveModulePermission {
@@ -1744,13 +1607,25 @@ function executeNarrowBeamingRpc(fnName: string, arg: any, today: string) {
       db.prepare("INSERT INTO narrow_beaming_rounds (round_id, machine_no, quality, status) VALUES (?, 'NB-01', 'Hessian 40x10', 'OPEN')").run(roundId);
       round = db.prepare("SELECT * FROM narrow_beaming_rounds WHERE round_id = ?").get(roundId);
     }
-    return { ok: true, data: { roundId: round.round_id, machineNo: round.machine_no, quality: round.quality, status: round.status, totalCuts: round.total_cuts, totalMeters: round.total_meters } };
+    return {
+      ok: true,
+      currentRound: round.id || 1,
+      data: {
+        currentRound: round.id || 1,
+        roundId: round.round_id,
+        machineNo: round.machine_no,
+        quality: round.quality,
+        status: round.status,
+        totalCuts: round.total_cuts,
+        totalMeters: round.total_meters,
+      },
+    };
   }
   if (fnName === 'getShiftContext') {
     return { ok: true, data: { date: today, shift: 'Shift A', machines: ['NB-01', 'NB-02', 'NB-03', 'NB-04'], qualities: ['Hessian 40x10', 'B.Twill Warp', 'Sacking Warp'] } };
   }
   if (fnName === 'getCutStatus') {
-    return { ok: true, data: { targetCuts: 40, completedCuts: 28, remainingCuts: 12 } };
+    return { ok: true, currentRound: 1, data: { currentRound: 1, targetCuts: 40, completedCuts: 28, remainingCuts: 12 } };
   }
   if (fnName === 'saveLogEntry') {
     db.prepare(`
@@ -1810,7 +1685,7 @@ function executeNarrowBeamingRpc(fnName: string, arg: any, today: string) {
     db.prepare("UPDATE narrow_beaming_rounds SET status = 'CLOSED', closed_at = datetime('now') WHERE status = 'OPEN'").run();
     const newId = `NBR-${Date.now().toString().slice(-5)}`;
     db.prepare("INSERT INTO narrow_beaming_rounds (round_id, machine_no, quality, status) VALUES (?, 'NB-01', 'Hessian 40x10', 'OPEN')").run(newId);
-    return { ok: true, data: { closed: true, nextRoundId: newId } };
+    return { ok: true, data: { closed: true, nextRoundId: newId, currentRound: 1 } };
   }
   if (fnName === 'getCurrentRoundEntries' || fnName === 'getVerificationData' || fnName === 'getReportData') {
     const rows = db.prepare('SELECT * FROM narrow_beaming_production ORDER BY id DESC LIMIT 100').all() as any[];
@@ -1828,9 +1703,9 @@ function executeNarrowBeamingRpc(fnName: string, arg: any, today: string) {
       verified: Boolean(r.verified),
       ...safeJson(r.raw_json),
     }));
-    return { ok: true, data: mapped, entries: mapped, rows: mapped };
+    return { ok: true, generatedAt: today, currentRound: 1, data: mapped, entries: mapped, rows: mapped, rounds: [] };
   }
-  return { ok: true, data: {} };
+  return { ok: true, currentRound: 1, generatedAt: today, data: { currentRound: 1, generatedAt: today } };
 }
 
 function executeNarrowLoomRpc(fnName: string, args: any[], today: string) {
@@ -1894,10 +1769,22 @@ function executePreBeamingRpc(fnName: string, arg: any, today: string) {
       db.prepare("INSERT INTO pre_beaming_rounds (round_id, machine_no, quality, status) VALUES (?, 'PB-01', 'B.Twill Warp', 'OPEN')").run(roundId);
       round = db.prepare("SELECT * FROM pre_beaming_rounds WHERE round_id = ?").get(roundId);
     }
-    return { ok: true, data: { roundId: round.round_id, machineNo: round.machine_no, quality: round.quality, status: round.status, totalBeams: round.total_beams, totalMeters: round.total_meters } };
+    return {
+      ok: true,
+      currentRound: round.id || 1,
+      data: {
+        currentRound: round.id || 1,
+        roundId: round.round_id,
+        machineNo: round.machine_no,
+        quality: round.quality,
+        status: round.status,
+        totalBeams: round.total_beams,
+        totalMeters: round.total_meters,
+      },
+    };
   }
   if (fnName === 'getBeamStatus') {
-    return { ok: true, data: { activeBeams: 8, readyBeams: 5, emptyBeams: 3 } };
+    return { ok: true, currentRound: 1, data: { currentRound: 1, activeBeams: 8, readyBeams: 5, emptyBeams: 3 } };
   }
   if (fnName === 'saveLogEntry') {
     db.prepare(`
@@ -1934,7 +1821,7 @@ function executePreBeamingRpc(fnName: string, arg: any, today: string) {
     db.prepare("UPDATE pre_beaming_rounds SET status = 'CLOSED', closed_at = datetime('now') WHERE status = 'OPEN'").run();
     const nextId = `PBR-${Date.now().toString().slice(-5)}`;
     db.prepare("INSERT INTO pre_beaming_rounds (round_id, machine_no, quality, status) VALUES (?, 'PB-01', 'B.Twill Warp', 'OPEN')").run(nextId);
-    return { ok: true, data: { closed: true, nextRoundId: nextId } };
+    return { ok: true, data: { closed: true, nextRoundId: nextId, currentRound: 1 } };
   }
   if (fnName === 'getCurrentRoundEntries' || fnName === 'getVerificationData' || fnName === 'getReportData') {
     const rows = db.prepare('SELECT * FROM pre_beaming_production ORDER BY id DESC LIMIT 100').all() as any[];
@@ -1951,9 +1838,9 @@ function executePreBeamingRpc(fnName: string, arg: any, today: string) {
       operator: r.operator_name,
       ...safeJson(r.raw_json),
     }));
-    return { ok: true, data: mapped, rows: mapped };
+    return { ok: true, generatedAt: today, currentRound: 1, data: mapped, rows: mapped, rounds: [] };
   }
-  return { ok: true, data: {} };
+  return { ok: true, currentRound: 1, generatedAt: today, data: { currentRound: 1, generatedAt: today } };
 }
 
 function executePressRpc(fnName: string, payload: any, user: { username: string }) {

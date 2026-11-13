@@ -13,6 +13,7 @@ import {
 import {
   writePostgresHelperFiles,
   autoProvisionPostgresDatabase,
+  syncSqliteTablesToPostgres,
   currentPostgresStatus,
   POSTGRES_PRODUCTION_SCHEMA_SQL,
 } from './src/db/postgresAutoSetup.ts';
@@ -20,7 +21,7 @@ import {
 // Initialize the "production" database and all 42 tables immediately on server boot
 initProductionDatabase();
 writePostgresHelperFiles();
-autoProvisionPostgresDatabase().catch(() => {});
+autoProvisionPostgresDatabase(db).catch(() => {});
 
 // Extract the 16 exact HTML documents from the uploaded reference file
 const SOURCE_ASSET_PATH = path.resolve(
@@ -95,6 +96,7 @@ async function startServer() {
       INSERT INTO audit_logs (user_id, username, module_key, action_name, details)
       VALUES (?, ?, 'auth', 'user_login', ?)
     `).run(user.id, user.username, `Logged in as ${user.role_name}`);
+    syncSqliteTablesToPostgres(db, ['users', 'audit_logs']).catch(() => {});
 
     const permissions = getUserEffectivePermissions(user.id);
 
@@ -214,6 +216,7 @@ async function startServer() {
         Number(roleId),
         isActive === false ? 0 : 1
       );
+      syncSqliteTablesToPostgres(db, ['users', 'user_permissions']).catch(() => {});
       res.json({ ok: true, userId: info.lastInsertRowid });
     } catch (err: any) {
       res.status(400).json({ ok: false, error: err.message || 'Could not create user.' });
@@ -239,6 +242,7 @@ async function startServer() {
       if (password && String(password).trim().length > 0) {
         db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(String(password).trim(), userId);
       }
+      syncSqliteTablesToPostgres(db, ['users']).catch(() => {});
       res.json({ ok: true });
     } catch (err: any) {
       res.status(400).json({ ok: false, error: err.message });
@@ -251,7 +255,9 @@ async function startServer() {
       res.status(400).json({ ok: false, error: 'Primary Super Admin user cannot be deleted.' });
       return;
     }
+    db.prepare('DELETE FROM user_permissions WHERE user_id = ?').run(userId);
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    syncSqliteTablesToPostgres(db, ['users', 'user_permissions']).catch(() => {});
     res.json({ ok: true });
   });
 
@@ -289,6 +295,7 @@ async function startServer() {
       }
     });
     tx(permissions);
+    syncSqliteTablesToPostgres(db, ['user_permissions']).catch(() => {});
     res.json({ ok: true, effectivePermissions: getUserEffectivePermissions(userId) });
   });
 
@@ -312,6 +319,7 @@ async function startServer() {
       for (const m of MODULES) {
         insertPerm.run(roleId, m.key);
       }
+      syncSqliteTablesToPostgres(db, ['roles', 'role_permissions']).catch(() => {});
       res.json({ ok: true, roleId });
     } catch (err: any) {
       res.status(400).json({ ok: false, error: err.message });
@@ -349,6 +357,7 @@ async function startServer() {
       }
     });
     tx(permissions);
+    syncSqliteTablesToPostgres(db, ['role_permissions']).catch(() => {});
     res.json({ ok: true });
   });
 
@@ -391,7 +400,7 @@ async function startServer() {
 
   app.post('/api/admin/postgres/provision', async (req, res) => {
     const { host, port, user, password } = req.body || {};
-    const status = await autoProvisionPostgresDatabase({
+    const status = await autoProvisionPostgresDatabase(db, {
       host: host || '127.0.0.1',
       port: Number(port || 5432),
       user: user || 'postgres',
@@ -592,6 +601,10 @@ async function startServer() {
 
     try {
       const result = executeModuleRpc(moduleKey, String(fnName), Array.isArray(args) ? args : [args], userContext);
+      const mod = MODULES.find((m) => m.key === moduleKey);
+      if (mod) {
+        syncSqliteTablesToPostgres(db, [...mod.tables, 'audit_logs']).catch(() => {});
+      }
       res.json({ ok: true, result });
     } catch (err: any) {
       res.status(403).json({ ok: false, error: err.message || 'RPC execution failed' });
@@ -641,9 +654,182 @@ async function startServer() {
     }
 
     const docs = loadDepartmentHtmlDocs();
-    const rawHtml = docs[mod.docIndex] || '<!DOCTYPE html><html><body>Module HTML not found</body></html>';
+    let rawHtml = docs[mod.docIndex] || '<!DOCTYPE html><html><body>Module HTML not found</body></html>';
+
+    // Strip unwanted static helper/subtitle paragraphs from the department HTML
+    const phrasesToStrip = [
+      'Save this first for every shift',
+      'Enter headcount for each category. Total is calculated automatically.',
+      'Fill this in at the start of every shift.',
+      'ERP · Log Book · Production · Report',
+      'Add one row per quality. Use',
+      'Filter by date and/or shift. Leave a field blank to include all.',
+      'Fill in Date, Shift and Rotation of Staff first',
+      'Enter each piece, then Save. Click',
+      'A new table starts automatically whenever a new round begins.',
+      'Type the bale number, press Enter, type the weight',
+      'Fill this in first at the start of every round / shift.',
+      'Select a machine to see its round-by-round log.',
+      'Enter the physically measured production for a beam round here.',
+      'Cumulative production (every Unit, Machine, Shift and Round combined)',
+      'Total Loom is calculated automatically from Company + Contractor readings.',
+      'Enter data for all machines across the 3 shifts.',
+      'A digital copy of the register: for the selected date',
+      'Filter Production data by date range and (optionally) machine number',
+      'Fill in Date, Shift and Operator Name first',
+      'Length Target, Start Meter and Beam No are tracked automatically.',
+      'Cumulative V/L Beam Length reached so far for every round',
+      'Every production entry, in log-book order.',
+      'Filter Log Book and Production data by date range, shift, or operator.',
+      'Enter the cumulative meter reading for each machine per shift',
+      'Select a date range to see machine-wise production totals.',
+    ];
 
     const bridgeScript = `
+<style>
+  :root {
+    --plate-1: #9E0059;
+    --plate-2: #C90D6B;
+    --plate-3: #E62A82;
+    --plate-4: #F35BA0;
+    --plate-5: #EC69A8;
+    --plate-6: #F595C3;
+    --plate-7: #F9BCDA;
+    --plate-8: #FDE2EF;
+    --deep-ink: #38001E;
+    --primary: #9E0059 !important;
+    --primary-dark: #7A0045 !important;
+    --accent: #C90D6B !important;
+    --bg: #FDE2EF !important;
+    --card: #FFFFFF !important;
+    --text: #38001E !important;
+    --border: #EC69A8 !important;
+  }
+
+  p.hint, p.sub, p.subtext, #rp-generated, #beam-status, #cut-status, #lb-worker-info {
+    display: none !important;
+  }
+
+  html, body {
+    background: linear-gradient(180deg, #FDE2EF 0%, #F9BCDA 100%) !important;
+    color: #38001E !important;
+    font-weight: 800 !important;
+  }
+
+  h1, h2, h3, h4, h5, h6, .title, .section-title, .card-title {
+    color: #38001E !important;
+    font-weight: 900 !important;
+  }
+
+  header, .header, .topbar, .app-header, nav.top-nav, .hero-bar, .bg-blue-900, .bg-indigo-900, .bg-slate-900, .bg-teal-900, .bg-emerald-900 {
+    background: linear-gradient(135deg, #9E0059 0%, #C90D6B 45%, #E62A82 80%, #F35BA0 100%) !important;
+    color: #FFFFFF !important;
+    border-bottom: 2px solid #F595C3 !important;
+    box-shadow: inset 0 2px 1px rgba(255,255,255,0.42), 0 8px 20px -4px rgba(158,0,89,0.35) !important;
+  }
+
+  header h1, header h2, header h3, .header h1, .header h2, .topbar h1, .topbar h2, .topbar .title, .app-header h1, .app-header h2 {
+    color: #FFFFFF !important;
+    font-weight: 900 !important;
+  }
+
+  /* Active / Selected buttons inside top header (white pill -> Deep Bold Berry text) */
+  header button.bg-white,
+  header button.active,
+  header .tab.active,
+  header .tab-btn.active,
+  header .nav-btn.active,
+  .header button.bg-white,
+  .header button.active,
+  .topbar button.active,
+  .topbar .tab.active,
+  .app-header button.active {
+    background: #FFFFFF !important;
+    color: #38001E !important;
+    border: 2px solid #FDE2EF !important;
+    font-weight: 900 !important;
+    box-shadow: 0 3px 10px rgba(56, 0, 30, 0.25) !important;
+  }
+
+  header button.bg-white *,
+  header button.active *,
+  header .tab.active *,
+  header .tab-btn.active *,
+  header .nav-btn.active *,
+  .header button.bg-white *,
+  .header button.active *,
+  .topbar button.active *,
+  .topbar .tab.active *,
+  .app-header button.active * {
+    color: #38001E !important;
+    font-weight: 900 !important;
+  }
+
+  .card, .panel, .section-card, .box, .form-card, div.bg-white, section.bg-white, main.bg-white {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFF7FB 70%, #FDE2EF 100%) !important;
+    border: 2px solid #F595C3 !important;
+    box-shadow: inset 0 1px 0 #FFFFFF, 0 8px 20px -6px rgba(158,0,89,0.16) !important;
+    color: #38001E !important;
+  }
+
+  label, .label, .field-label, span, p, div {
+    font-weight: 800;
+  }
+
+  label, .label, .field-label {
+    color: #38001E !important;
+    font-weight: 900 !important;
+  }
+
+  input, select, textarea {
+    background-color: #FFFFFF !important;
+    color: #38001E !important;
+    font-weight: 800 !important;
+    border: 2px solid #EC69A8 !important;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #9E0059 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(201, 13, 107, 0.22) !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+  }
+
+  thead tr, th {
+    background: linear-gradient(180deg, #C90D6B 0%, #9E0059 100%) !important;
+    color: #FFFFFF !important;
+    font-weight: 900 !important;
+    border-color: #F595C3 !important;
+  }
+
+  tbody td, td {
+    color: #38001E !important;
+    font-weight: 800 !important;
+    border-color: #F595C3 !important;
+  }
+
+  tbody tr:nth-child(even) {
+    background-color: #FDE2EF !important;
+  }
+
+  tbody tr:hover {
+    background-color: #F9BCDA !important;
+  }
+
+  button, .btn, .tab-btn, .nav-btn, input[type="submit"], input[type="button"] {
+    font-weight: 900 !important;
+  }
+
+  button.primary, .btn-primary, .btn-save, button[type="submit"] {
+    background: linear-gradient(180deg, #E62A82 0%, #C90D6B 52%, #9E0059 100%) !important;
+    color: #FFFFFF !important;
+    border: 1px solid #9E0059 !important;
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.5), 0 4px 10px rgba(158,0,89,0.3) !important;
+  }
+</style>
 <script>
 (function() {
   window.__BJM_USER__ = ${JSON.stringify({
@@ -654,6 +840,94 @@ async function startServer() {
   })};
   window.__BJM_PERMS__ = ${JSON.stringify(modPerm)};
   window.__BJM_MODULE__ = ${JSON.stringify(mod.key)};
+  var STRIP_PHRASES = ${JSON.stringify(phrasesToStrip)};
+
+  function ensureMenuButtonContrast() {
+    try {
+      var btns = document.querySelectorAll('header button, .header button, .topbar button, .app-header button, nav button, .tabs button, .tab-bar button, .tab, .tab-btn, .nav-btn');
+      for (var i = 0; i < btns.length; i++) {
+        var b = btns[i];
+        var cls = (b.className || '') + '';
+        var cs = window.getComputedStyle(b);
+        var bg = cs.backgroundColor || '';
+        var bgImg = cs.backgroundImage || '';
+        var isLightBg = false;
+
+        if (cls.indexOf('bg-white') !== -1 || cls.indexOf('bg-amber') !== -1 || cls.indexOf('bg-yellow') !== -1 || cls.indexOf('bg-pink-50') !== -1 || cls.indexOf('bg-gray-100') !== -1) {
+          isLightBg = true;
+        } else if (bg.indexOf('rgb') === 0 && bg.indexOf('rgba(0, 0, 0, 0)') === -1) {
+          var parts = bg.match(/\\d+(\\.\\d+)?/g);
+          if (parts && parts.length >= 3) {
+            var r = parseFloat(parts[0]);
+            var g = parseFloat(parts[1]);
+            var bl = parseFloat(parts[2]);
+            var alpha = parts.length >= 4 ? parseFloat(parts[3]) : 1;
+            if (alpha > 0.5 && (r * 0.299 + g * 0.587 + bl * 0.114) > 165) {
+              isLightBg = true;
+            }
+          }
+        }
+
+        // Also check if button is active inside header
+        var inHeader = Boolean(b.closest('header, .header, .topbar, .app-header'));
+        var isActive = cls.indexOf('active') !== -1 || b.getAttribute('aria-selected') === 'true';
+
+        if (inHeader && (isLightBg || isActive)) {
+          b.style.setProperty('background', '#FFFFFF', 'important');
+          b.style.setProperty('color', '#38001E', 'important');
+          var kids = b.querySelectorAll('*');
+          for (var k = 0; k < kids.length; k++) {
+            kids[k].style.setProperty('color', '#38001E', 'important');
+          }
+        } else if (inHeader && !isLightBg && !isActive) {
+          b.style.setProperty('color', '#FFFFFF', 'important');
+          var kids2 = b.querySelectorAll('*');
+          for (var k2 = 0; k2 < kids2.length; k2++) {
+            kids2[k2].style.setProperty('color', '#FFFFFF', 'important');
+          }
+        } else if (!inHeader && isLightBg && bgImg === 'none') {
+          b.style.setProperty('color', '#38001E', 'important');
+        }
+      }
+    } catch (e) {}
+  }
+
+  function cleanUnwantedHelperTexts() {
+    ensureMenuButtonContrast();
+    try {
+      var nodes = document.querySelectorAll('p, div.muted, span.muted, #rp-generated, #beam-status, #cut-status, #lb-worker-info');
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        if (el.children && el.children.length > 3) continue;
+        var txt = (el.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (!txt) continue;
+        if (
+          txt.indexOf('Round undefined') !== -1 ||
+          txt.indexOf('No running beam on Machine') !== -1 ||
+          txt.indexOf('Report generated:') !== -1 ||
+          txt.indexOf('Current open round:') !== -1 ||
+          txt.indexOf('Worker: undefined') !== -1 ||
+          txt.indexOf('Hours Worked: undefined') !== -1
+        ) {
+          el.textContent = '';
+          el.style.display = 'none';
+          continue;
+        }
+        for (var j = 0; j < STRIP_PHRASES.length; j++) {
+          if (txt.indexOf(STRIP_PHRASES[j]) !== -1) {
+            el.textContent = '';
+            el.style.display = 'none';
+            break;
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  document.addEventListener('click', function() {
+    setTimeout(ensureMenuButtonContrast, 10);
+    setTimeout(ensureMenuButtonContrast, 80);
+  }, true);
 
   // Non-blocking toast banner for native alert() calls inside iframe
   function showBridgeToast(message, isError) {
@@ -713,6 +987,7 @@ async function startServer() {
             if (typeof successHandler === 'function') {
               successHandler(res.body.result);
             }
+            setTimeout(cleanUnwantedHelperTexts, 30);
           })
           .catch(function(err) {
             showBridgeToast(err.message || 'Network error', true);
@@ -734,6 +1009,7 @@ async function startServer() {
   // Auto-authenticate legacy internal login screens (Carding, Spinning, Spreader)
   // and enforce module-level RBAC/User permissions in UI controls
   function applySsoAndPermissions() {
+    cleanUnwantedHelperTexts();
     var modKey = window.__BJM_MODULE__;
     var user = window.__BJM_USER__;
     var perms = window.__BJM_PERMS__;
@@ -801,11 +1077,17 @@ async function startServer() {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(applySsoAndPermissions, 80);
-      setTimeout(applySsoAndPermissions, 400);
+      cleanUnwantedHelperTexts();
+      setTimeout(applySsoAndPermissions, 60);
+      setTimeout(applySsoAndPermissions, 350);
+      try {
+        var obs = new MutationObserver(function() { cleanUnwantedHelperTexts(); });
+        obs.observe(document.body, { childList: true, subtree: true });
+      } catch (e) {}
     });
   } else {
-    setTimeout(applySsoAndPermissions, 80);
+    cleanUnwantedHelperTexts();
+    setTimeout(applySsoAndPermissions, 60);
   }
 })();
 </script>
