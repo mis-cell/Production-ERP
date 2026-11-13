@@ -7,34 +7,28 @@
 set -e
 
 echo "=================================================================="
-echo " STEP 1: Installing Node.js & Build Tools (if needed)"
-echo "=================================================================="
-sudo apt-get update -y
-sudo apt-get install -y build-essential python3 sqlite3 curl
-
-if ! command -v node >/dev/null 2>&1; then
-  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-  sudo apt-get install -y nodejs
-fi
-
-echo "=================================================================="
-echo " STEP 2: Installing NPM Packages & Building Application"
-echo "=================================================================="
-npm install
-npm run build
-
-echo "=================================================================="
-echo " STEP 3: Creating 'production' database in PostgreSQL (BJCL)"
+echo " STEP 1: Creating 'production' database in PostgreSQL (BJCL)"
 echo " (Existing databases 'SQC' and 'bjcl_db' will NOT be touched)"
 echo "=================================================================="
+
 if command -v psql >/dev/null 2>&1; then
   sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname = 'production'" | grep -q 1 || sudo -u postgres psql -c "CREATE DATABASE production;"
   echo "-> Database 'production' is ready!"
-  if [ -f "production_postgres_schema.sql" ]; then
-    sudo -u postgres psql -d production -f production_postgres_schema.sql
-    echo "-> All 42 tables and fields created in PostgreSQL 'production'!"
-  fi
+
+  echo "=================================================================="
+  echo " STEP 2: Creating all 42 Department & Admin Tables in 'production'"
+  echo "=================================================================="
+  sudo -u postgres psql -d production -f production_postgres_schema.sql
+  echo "-> All 42 tables and fields created in PostgreSQL 'production'!"
+else
+  echo "-> Note: psql CLI not found in PATH, using built-in Node auto-provisioner."
 fi
+
+echo "=================================================================="
+echo " STEP 3: Installing packages & building web app for Port 3002"
+echo "=================================================================="
+npm install --legacy-peer-deps
+npm run build
 
 # Allow port 3002 on firewall if active
 if command -v ufw >/dev/null 2>&1; then
