@@ -1,0 +1,6 @@
+{
+  "name": "Bally Jute Mill Production ERP",
+  "description": "Full-stack multi-department production ERP system for Bally Jute Mill with role-based and user-based access control, automated production database tables, and 16 department modules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
