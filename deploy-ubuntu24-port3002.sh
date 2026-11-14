@@ -15,7 +15,7 @@ if ! command -v node >/dev/null 2>&1; then
   sudo apt-get install -y nodejs
 fi
 
-npm install --legacy-peer-deps
+npm install
 npm run build
 
 # Open port 3002 on UFW if UFW is active

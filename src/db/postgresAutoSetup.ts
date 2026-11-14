@@ -658,6 +658,9 @@ CREATE TABLE IF NOT EXISTS vl_loom_production (
 -- SEED DEFAULT ROLES & ADMIN USER (ANKANA ONLY) IN POSTGRESQL
 INSERT INTO roles (name, description, is_admin) VALUES
   ('Super Admin', '', 1),
+  ('Super User', '', 1),
+  ('User', '', 0),
+  ('Operator', '', 0),
   ('Mill Manager', '', 0),
   ('Spinning & Prep Supervisor', '', 0),
   ('Beaming & Loom Supervisor', '', 0),
@@ -770,12 +773,16 @@ function buildTableSyncSql(sqliteDb: any, tableNames?: string[]): string {
   const targetSet = tableNames && tableNames.length > 0 ? new Set(tableNames) : null;
   // If syncing users or role_permissions or user_permissions, include parent tables so FK constraints are satisfied
   if (targetSet) {
-    if (targetSet.has('user_permissions') || targetSet.has('users')) {
+    if (
+      targetSet.has('user_permissions') ||
+      targetSet.has('users') ||
+      targetSet.has('roles') ||
+      targetSet.has('role_permissions')
+    ) {
       targetSet.add('roles');
       targetSet.add('users');
-    }
-    if (targetSet.has('role_permissions')) {
-      targetSet.add('roles');
+      targetSet.add('role_permissions');
+      targetSet.add('user_permissions');
     }
   }
 

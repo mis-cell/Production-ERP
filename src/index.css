@@ -1,42 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  /* Exact 8 Colour Plates from Magenta_to_blush_palette */
-  --plate-1: #9E0059; /* Deep Royal Magenta */
-  --plate-2: #C90D6B; /* Vivid Ruby Magenta */
-  --plate-3: #E62A82; /* Bright Rose Pink */
-  --plate-4: #F35BA0; /* Warm Flamingo Pink */
-  --plate-5: #EC69A8; /* Medium Orchid Blush */
-  --plate-6: #F595C3; /* Soft Carnation Pink */
-  --plate-7: #F9BCDA; /* Pastel Petal Blush */
-  --plate-8: #FDE2EF; /* Light Silk Blush */
-  --deep-ink: #38001E; /* Deep Bold Prominent Text Color */
+  --yajur-deep-violet: #240046;
+  --yajur-purple: #3B0764;
+  --yajur-purple-mid: #4C1D95;
+  --yajur-crimson: #831843;
+  --yajur-magenta: #9D174D;
+  --yajur-orange: #EA580C;
+  --yajur-amber: #F59E0B;
+  --bg-canvas: #FAF7FD;
+  --bg-surface: #FFFFFF;
+  --text-primary: #1E0538;
+  --text-secondary: #4C1D95;
+  --border-subtle: #E9D5FF;
 }
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--plate-8);
-    color: var(--deep-ink);
-    font-weight: 700;
+    font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-weight: 400;
+    line-height: 1.5;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    font-weight: 900;
-    letter-spacing: -0.02em;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.015em;
   }
 
-  label, th, td, input, select, textarea, button {
-    font-weight: 800;
+  label {
+    font-weight: 600;
+    color: #2E1065;
+  }
+
+  th {
+    font-weight: 600;
+  }
+
+  td {
+    font-weight: 500;
+  }
+
+  input, select, textarea {
+    font-weight: 500;
+    color: #1E0538;
+  }
+
+  button {
+    font-weight: 600;
   }
 
   code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 800;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 500;
   }
 }
 
@@ -44,64 +67,39 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* HD Glossy Surface Utilities using the 8 Colour Plates */
-.hd-gloss-banner {
-  background: linear-gradient(
-    135deg,
-    #9E0059 0%,
-    #C90D6B 42%,
-    #E62A82 78%,
-    #F35BA0 100%
-  );
-  box-shadow:
-    inset 0 2px 1px rgba(255, 255, 255, 0.42),
-    inset 0 -3px 8px rgba(74, 0, 40, 0.45),
-    0 12px 28px -6px rgba(158, 0, 89, 0.38);
+/* YAJUR Theme Surface Utilities (Matching Screenshots 1, 2 & 3) */
+.yajur-banner {
+  background: linear-gradient(90deg, #3B0764 0%, #831843 52%, #EA580C 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px -2px rgba(59, 7, 100, 0.25);
 }
 
-.hd-gloss-sidebar {
-  background: linear-gradient(
-    180deg,
-    #7A0045 0%,
-    #9E0059 38%,
-    #C90D6B 78%,
-    #E62A82 100%
-  );
-  box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.25),
-    6px 0 24px rgba(158, 0, 89, 0.28);
+.yajur-sidebar {
+  background: linear-gradient(180deg, #240046 0%, #2E0854 55%, #1A0033 100%);
+  color: #FFFFFF;
+  border-right: 1px solid #3B0764;
 }
 
-.hd-gloss-btn {
-  background: linear-gradient(
-    180deg,
-    #E62A82 0%,
-    #C90D6B 52%,
-    #9E0059 100%
-  );
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
-    0 4px 12px rgba(158, 0, 89, 0.35);
+.yajur-active-pill {
+  background: linear-gradient(90deg, #9D174D 0%, #C2410C 55%, #EA580C 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
 }
 
-.hd-gloss-btn:hover {
-  background: linear-gradient(
-    180deg,
-    #F35BA0 0%,
-    #E62A82 50%,
-    #C90D6B 100%
-  );
+.yajur-active-tab {
+  background: linear-gradient(90deg, #4C1D95 0%, #9D174D 100%);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(76, 29, 149, 0.25);
 }
 
-.hd-gloss-card {
-  background: linear-gradient(
-    180deg,
-    #FFFFFF 0%,
-    #FFF7FB 65%,
-    #FDE2EF 100%
-  );
-  border: 2px solid #F595C3;
-  box-shadow:
-    inset 0 1px 0 #FFFFFF,
-    0 8px 22px -6px rgba(158, 0, 89, 0.16);
+.yajur-primary-btn {
+  background: #3B0764;
+  color: #FFFFFF;
+  border: 1px solid #4C1D95;
+  transition: all 0.15s ease;
+}
+
+.yajur-primary-btn:hover {
+  background: #4C1D95;
+  color: #FFFFFF;
 }

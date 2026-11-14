@@ -18,18 +18,6 @@ import { UserSession, EffectivePermission, ModuleMeta } from './types';
 import { AdminConsole } from './components/AdminConsole';
 import { ReportSection } from './components/ReportSection';
 
-// Exact 8 Colour Plates from the uploaded Magenta-to-Blush Palette
-export const MAGENTA_BLUSH_PLATES = [
-  '#9E0059', // Plate 1: Deep Royal Magenta
-  '#C90D6B', // Plate 2: Vivid Ruby Magenta
-  '#E62A82', // Plate 3: Bright Rose Pink
-  '#F35BA0', // Plate 4: Warm Flamingo Pink
-  '#EC69A8', // Plate 5: Medium Orchid Blush
-  '#F595C3', // Plate 6: Soft Carnation Pink
-  '#F9BCDA', // Plate 7: Pastel Petal Blush
-  '#FDE2EF', // Plate 8: Light Silk Blush
-];
-
 // Listed in exact 1..16 order matching the 16 forms in the source file
 const ALL_MODULES: ModuleMeta[] = [
   {
@@ -248,26 +236,37 @@ export default function App() {
   };
 
   // ==========================================================================
-  // STEP 1: HD GLOSSY 8-PLATE MAGENTA-TO-BLUSH LOGIN PAGE
+  // STEP 1: YAJUR THEME LOGIN PAGE (WITH YAJUR LOTUS LOGO)
   // ==========================================================================
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#9E0059] via-[#C90D6B] to-[#F35BA0] flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md hd-gloss-card rounded-2xl overflow-hidden shadow-2xl border-2 border-[#F595C3]">
-          {/* 8-Plate Glossy Color Bar at Top */}
-          <div className="grid grid-cols-8 h-3 w-full">
-            {MAGENTA_BLUSH_PLATES.map((hex) => (
-              <div key={hex} style={{ backgroundColor: hex }} />
-            ))}
-          </div>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-4"
+        style={{
+          background: 'linear-gradient(135deg, #1E0538 0%, #3B0764 52%, #831843 100%)',
+        }}
+      >
+        <div className="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl border border-[#E9D5FF]">
+          {/* Top YAJUR Lotus Gradient Accent Bar */}
+          <div
+            className="h-2 w-full"
+            style={{
+              background: 'linear-gradient(90deg, #3B0764 0%, #9D174D 52%, #EA580C 100%)',
+            }}
+          />
 
           <div className="p-8 text-center">
-            <h1 className="text-2xl font-black text-[#38001E] tracking-tight">
-              BALLY JUTE MILL ERP
-            </h1>
+            <div className="flex flex-col items-center justify-center mb-3">
+              <h1 className="text-xl font-bold text-[#240046] tracking-tight">
+                BALLY JUTE MILL ERP
+              </h1>
+              <p className="text-xs font-medium text-[#6B21A8]">
+                Production &amp; Operations Management System
+              </p>
+            </div>
 
             {loginError && (
-              <div className="mt-4 p-3 rounded-lg bg-[#FDE2EF] border-2 border-[#C90D6B] text-xs font-black text-[#9E0059] text-left">
+              <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-medium text-red-700 text-left">
                 {loginError}
               </div>
             )}
@@ -277,11 +276,11 @@ export default function App() {
                 e.preventDefault();
                 performLogin(loginUsername, loginPassword);
               }}
-              className="mt-6 space-y-4 text-left"
+              className="mt-5 space-y-4 text-left"
             >
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-[#38001E] mb-1.5">
-                  <UserIcon className="w-3.5 h-3.5 inline mr-1.5 text-[#9E0059]" />
+                <label className="block text-xs font-semibold text-[#3B0764] mb-1.5">
+                  <UserIcon className="w-3.5 h-3.5 inline mr-1.5 text-[#9D174D]" />
                   Username
                 </label>
                 <input
@@ -290,13 +289,13 @@ export default function App() {
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
                   placeholder="Enter Username"
-                  className="w-full px-4 py-2.5 text-sm border-2 border-[#EC69A8] rounded-xl bg-white text-[#38001E] focus:outline-none focus:border-[#9E0059] font-extrabold shadow-inner"
+                  className="w-full px-3.5 py-2.5 text-sm border border-[#D8B4FE] rounded-lg bg-white text-[#1E0538] focus:outline-none focus:border-[#9D174D] focus:ring-2 focus:ring-[#9D174D]/15 font-medium transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-[#38001E] mb-1.5">
-                  <Lock className="w-3.5 h-3.5 inline mr-1.5 text-[#9E0059]" />
+                <label className="block text-xs font-semibold text-[#3B0764] mb-1.5">
+                  <Lock className="w-3.5 h-3.5 inline mr-1.5 text-[#9D174D]" />
                   Password
                 </label>
                 <input
@@ -305,16 +304,19 @@ export default function App() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="Enter Password"
-                  className="w-full px-4 py-2.5 text-sm border-2 border-[#EC69A8] rounded-xl bg-white text-[#38001E] focus:outline-none focus:border-[#9E0059] font-extrabold shadow-inner"
+                  className="w-full px-3.5 py-2.5 text-sm border border-[#D8B4FE] rounded-lg bg-white text-[#1E0538] focus:outline-none focus:border-[#9D174D] focus:ring-2 focus:ring-[#9D174D]/15 font-medium transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loggingIn}
-                className="w-full py-3 rounded-xl hd-gloss-btn text-white font-black text-sm tracking-wide transition-all cursor-pointer"
+                style={{
+                  background: 'linear-gradient(90deg, #3B0764 0%, #9D174D 52%, #EA580C 100%)',
+                }}
+                className="w-full py-2.5 rounded-lg text-white font-semibold text-sm tracking-wide transition-all cursor-pointer shadow-md hover:opacity-95"
               >
-                {loggingIn ? 'SIGNING IN...' : 'LOGIN TO SYSTEM'}
+                {loggingIn ? 'Signing in...' : 'Sign In to Workspace'}
               </button>
             </form>
           </div>
@@ -324,7 +326,7 @@ export default function App() {
   }
 
   // ==========================================================================
-  // STEP 2: MAIN APP — LEFT SIDEBAR (ALL 16 FORMS + REPORT SECTION + ADMIN PANEL)
+  // STEP 2: MAIN APP — YAJUR DEEP ROYAL PURPLE SIDEBAR (MATCHING SCREENSHOT 1)
   // ==========================================================================
   const accessibleModules = ALL_MODULES.filter((m) => {
     const p = permissions.find((perm) => perm.moduleKey === m.key);
@@ -335,22 +337,27 @@ export default function App() {
   });
 
   const activeModuleMeta = ALL_MODULES.find((m) => m.key === activeModuleKey) || ALL_MODULES[0];
+  const isCurrentUserAdmin = Boolean(
+    user.isAdmin ||
+      user.username.toLowerCase() === 'admin' ||
+      user.roleName.toLowerCase() === 'super admin'
+  );
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[#FDE2EF] text-[#38001E]">
-      {/* LEFT SIDEBAR: All Forms + Report Section + Admin Panel */}
+    <div className="h-screen w-screen overflow-hidden flex bg-[#FAF7FD] text-[#1E0538]">
+      {/* LEFT SIDEBAR: Deep Royal Purple + YAJUR Crimson/Orange Active Pill */}
       {!fullScreenModule && (
         <aside
           className={`${
-            sidebarCollapsed ? 'w-16' : 'w-72'
-          } hd-gloss-sidebar text-white flex flex-col border-r-2 border-[#9E0059] transition-all duration-150 shrink-0`}
+            sidebarCollapsed ? 'w-16' : 'w-68'
+          } yajur-sidebar flex flex-col transition-all duration-150 shrink-0`}
         >
           {/* Top Brand Header */}
-          <div className="p-3.5 border-b border-white/25 flex items-center justify-between bg-[#7A0045]/70">
+          <div className="h-14 px-3.5 border-b border-[#3B0764] flex items-center justify-between">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-2.5 overflow-hidden">
                 <div className="truncate">
-                  <div className="font-black text-base text-white tracking-tight truncate drop-shadow-xs">
+                  <div className="font-bold text-sm text-white tracking-wide truncate">
                     BALLY JUTE MILL
                   </div>
                 </div>
@@ -358,7 +365,7 @@ export default function App() {
             )}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1.5 rounded-lg text-white hover:bg-white/20 cursor-pointer"
+              className="p-1.5 rounded-lg text-purple-200 hover:text-white hover:bg-[#3B0764] cursor-pointer"
               title="Collapse / Expand Sidebar"
             >
               <Menu className="w-4 h-4" />
@@ -367,29 +374,23 @@ export default function App() {
 
           {/* Primary Mode Switchers at Top of Sidebar */}
           {!sidebarCollapsed && (
-            <div className="p-3 border-b border-white/25 space-y-2 bg-[#9E0059]/60">
+            <div className="p-3 border-b border-[#3B0764] space-y-2">
               <button
                 onClick={() => {
                   setReportDeptFilter('all');
                   setViewMode('report');
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer ${
                   viewMode === 'report'
-                    ? 'bg-[#FDE2EF] text-[#38001E] border-2 border-white shadow-md'
-                    : 'bg-white/15 hover:bg-white/25 text-white border border-white/30'
+                    ? 'yajur-active-pill text-white'
+                    : 'bg-[#3B0764]/75 hover:bg-[#4C1D95] text-[#FBBF24] border border-[#581C87]'
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
+                  <BarChart3 className="w-3.5 h-3.5 text-[#FBBF24]" />
                   REPORT SECTION (ALL)
                 </span>
-                <span
-                  className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
-                    viewMode === 'report'
-                      ? 'bg-[#9E0059] text-white'
-                      : 'bg-[#7A0045] text-[#FDE2EF]'
-                  }`}
-                >
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#1A0033] text-[#FDE68A]">
                   16 Depts
                 </span>
               </button>
@@ -399,23 +400,17 @@ export default function App() {
                   setAdminTab('users');
                   setViewMode('admin');
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer ${
                   viewMode === 'admin'
-                    ? 'bg-[#FDE2EF] text-[#38001E] border-2 border-white shadow-md'
-                    : 'bg-white/15 hover:bg-white/25 text-white border border-white/30'
+                    ? 'yajur-active-pill text-white'
+                    : 'bg-[#3B0764]/75 hover:bg-[#4C1D95] text-purple-100 border border-[#581C87]'
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
+                  <Shield className="w-3.5 h-3.5 text-purple-200" />
                   ADMIN PANEL &amp; USERS
                 </span>
-                <span
-                  className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
-                    viewMode === 'admin'
-                      ? 'bg-[#9E0059] text-white'
-                      : 'bg-[#7A0045] text-[#FDE2EF]'
-                  }`}
-                >
+                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#1A0033] text-[#FBBF24]">
                   DB
                 </span>
               </button>
@@ -425,38 +420,34 @@ export default function App() {
           {/* Search Input for the 16 Forms */}
           {!sidebarCollapsed && (
             <div className="px-3 pt-3 pb-1.5">
-              <div className="text-[11px] font-black uppercase tracking-wider text-[#FDE2EF] mb-1.5 flex items-center justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-purple-200 mb-1.5 flex items-center justify-between">
                 <span>ALL DEPARTMENT FORMS ({accessibleModules.length})</span>
               </div>
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[#38001E] absolute left-2.5 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-purple-300 absolute left-2.5 top-2" />
                 <input
                   type="text"
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
                   placeholder="Filter forms 1 to 16..."
-                  className="w-full pl-8 pr-2.5 py-1.5 bg-[#FDE2EF] border-2 border-[#F595C3] rounded-lg text-xs font-extrabold text-[#38001E] placeholder-[#9E0059]/70 focus:outline-none focus:border-white"
+                  className="w-full pl-8 pr-2.5 py-1.5 bg-[#1A0033]/80 border border-[#581C87] rounded-lg text-xs font-medium text-white placeholder-purple-300/70 focus:outline-none focus:border-[#EA580C]"
                 />
               </div>
             </div>
           )}
 
           {/* Flat Numbered List of All 16 Department Forms */}
-          <div className="flex-1 overflow-y-auto px-2.5 py-2 space-y-1">
+          <div className="flex-1 overflow-y-auto px-2.5 py-1.5 space-y-1">
             {accessibleModules.map((mod) => {
               const isCurrentForm = viewMode === 'form' && activeModuleKey === mod.key;
-              const isCurrentReport = viewMode === 'report' && reportDeptFilter === mod.key;
-              const perm = permissions.find((p) => p.moduleKey === mod.key);
 
               return (
                 <div
                   key={mod.key}
                   className={`group flex items-center justify-between rounded-xl transition-all ${
                     isCurrentForm
-                      ? 'bg-[#FDE2EF] text-[#38001E] font-black border-2 border-white shadow-md'
-                      : isCurrentReport
-                      ? 'bg-[#F9BCDA] text-[#38001E] font-black border border-white'
-                      : 'hover:bg-white/20 text-white font-extrabold'
+                      ? 'yajur-active-pill font-semibold'
+                      : 'hover:bg-[#3B0764]/70 text-purple-100 hover:text-white font-medium'
                   }`}
                 >
                   <button
@@ -464,54 +455,34 @@ export default function App() {
                       setActiveModuleKey(mod.key);
                       setViewMode('form');
                     }}
-                    className="flex-1 flex items-center gap-2 px-3 py-2 text-left text-xs font-black truncate cursor-pointer"
+                    className="flex-1 flex items-center gap-2.5 px-3 py-2 text-left text-xs truncate cursor-pointer"
                     title={`Open ${mod.name} Entry Form`}
                   >
                     <FileText
                       className={`w-3.5 h-3.5 shrink-0 ${
-                        isCurrentForm || isCurrentReport ? 'text-[#9E0059]' : 'text-[#FDE2EF]'
+                        isCurrentForm ? 'text-[#FDE68A]' : 'text-purple-300 group-hover:text-white'
                       }`}
                     />
                     {!sidebarCollapsed && <span className="truncate">{mod.shortName}</span>}
                   </button>
-
-                  {!sidebarCollapsed && perm?.canReport && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setReportDeptFilter(mod.key);
-                        setViewMode('report');
-                      }}
-                      title={`View ${mod.name} Report`}
-                      className={`mr-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider cursor-pointer transition-colors ${
-                        isCurrentReport
-                          ? 'bg-[#9E0059] text-white'
-                          : isCurrentForm
-                          ? 'bg-[#C90D6B] text-white hover:bg-[#9E0059]'
-                          : 'bg-[#7A0045]/80 hover:bg-[#FDE2EF] hover:text-[#38001E] text-white'
-                      }`}
-                    >
-                      Report
-                    </button>
-                  )}
                 </div>
               );
             })}
 
             {/* Quick Admin Sub-links at Bottom of Scroll */}
             {!sidebarCollapsed && (
-              <div className="pt-3 mt-3 border-t border-white/25 space-y-1">
-                <div className="px-2 text-[10px] font-black uppercase tracking-wider text-[#FDE2EF]">
-                  Admin Panel Shortcuts
+              <div className="pt-3 mt-3 border-t border-[#3B0764] space-y-1">
+                <div className="px-2 text-[10px] font-bold uppercase tracking-wider text-purple-300/80">
+                  Admin Shortcuts
                 </div>
                 <button
                   onClick={() => {
                     setAdminTab('users');
                     setViewMode('admin');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-extrabold text-white hover:bg-white/20 cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-200 hover:text-white hover:bg-[#3B0764]/70 cursor-pointer"
                 >
-                  <Users className="w-3.5 h-3.5 text-[#FDE2EF]" />
+                  <Users className="w-3.5 h-3.5 text-purple-300" />
                   <span>Users &amp; Permissions</span>
                 </button>
                 <button
@@ -520,21 +491,21 @@ export default function App() {
                     setAdminTab('database');
                     setViewMode('admin');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-extrabold text-white hover:bg-white/20 cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-200 hover:text-white hover:bg-[#3B0764]/70 cursor-pointer"
                 >
-                  <Database className="w-3.5 h-3.5 text-[#FDE2EF]" />
+                  <Database className="w-3.5 h-3.5 text-purple-300" />
                   <span>&ldquo;production&rdquo; DB Tables</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Logged-In User Footer */}
-          <div className="p-3 border-t border-white/25 bg-[#7A0045] flex items-center justify-between gap-2">
+          {/* Logged-In User Footer (Matching Screenshot 1) */}
+          <div className="p-3 border-t border-[#3B0764] bg-[#1A0033] flex items-center justify-between gap-2">
             {!sidebarCollapsed && (
               <div className="truncate">
-                <div className="text-xs font-black text-white truncate">{user.fullName}</div>
-                <div className="text-[11px] text-[#FDE2EF] font-mono font-bold truncate">
+                <div className="text-xs font-bold text-white truncate">{user.fullName}</div>
+                <div className="text-[11px] text-[#FBBF24] font-mono truncate">
                   @{user.username} · {user.roleName}
                 </div>
               </div>
@@ -542,9 +513,9 @@ export default function App() {
             <button
               onClick={handleLogout}
               title="Logout"
-              className="px-3 py-1.5 rounded-lg bg-[#FDE2EF] hover:bg-white text-[#9E0059] text-xs font-black flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+              className="px-3 py-1.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-xs"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 text-white" />
               {!sidebarCollapsed && <span>Logout</span>}
             </button>
           </div>
@@ -553,33 +524,33 @@ export default function App() {
 
       {/* RIGHT MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar with 8-Plate Glossy Accent & Deep Bold Text */}
-        <header className="h-14 bg-gradient-to-r from-[#FFFFFF] via-[#FDE2EF] to-[#F9BCDA] border-b-2 border-[#EC69A8] px-4 flex items-center justify-between gap-3 shrink-0 shadow-xs">
+        {/* Top Bar Matching Screenshot 1 & Screenshot 2 */}
+        <header className="h-14 bg-white border-b border-[#E9D5FF] px-4 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="px-3 py-1 rounded-md hd-gloss-btn text-white font-black text-xs tracking-wide">
+            <span className="px-2.5 py-1 rounded-md bg-[#F3E8FF] border border-[#E9D5FF] text-[#4C1D95] font-bold text-xs">
               {viewMode === 'form'
                 ? activeModuleMeta.shortName
                 : viewMode === 'report'
                 ? 'REPORT SECTION'
                 : 'ADMIN PANEL'}
             </span>
-            <h2 className="text-base font-black text-[#38001E] truncate">
+            <h2 className="text-sm font-bold text-[#240046] truncate">
               {viewMode === 'form'
                 ? activeModuleMeta.name
                 : viewMode === 'report'
-                ? 'Production & Shift Reports (Database: production)'
+                ? 'Master Production, Table & Field Reports (Database: production)'
                 : 'User Permissions, Roles & Database Control'}
             </h2>
           </div>
 
-          {/* Top Bar Action Buttons */}
+          {/* Top Bar Action Buttons Matching Screenshot 1 & Screenshot 2 */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('form')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black cursor-pointer transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
                 viewMode === 'form'
-                  ? 'hd-gloss-btn text-white'
-                  : 'bg-white border-2 border-[#EC69A8] text-[#38001E] hover:bg-[#F9BCDA]'
+                  ? 'bg-[#3B0764] text-white shadow-xs'
+                  : 'bg-white border border-[#E9D5FF] text-[#3B0764] hover:bg-[#FAF5FF]'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
@@ -591,10 +562,10 @@ export default function App() {
                 setReportDeptFilter(viewMode === 'form' ? activeModuleMeta.key : 'all');
                 setViewMode('report');
               }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black cursor-pointer transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
                 viewMode === 'report'
-                  ? 'hd-gloss-btn text-white'
-                  : 'bg-white border-2 border-[#EC69A8] text-[#38001E] hover:bg-[#F9BCDA]'
+                  ? 'bg-[#3B0764] text-white shadow-xs'
+                  : 'bg-[#FFFBEB] border border-[#FCD34D] text-[#B45309] hover:bg-[#FEF3C7]'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -606,10 +577,10 @@ export default function App() {
                 setAdminTab('users');
                 setViewMode('admin');
               }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-black cursor-pointer transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
                 viewMode === 'admin'
-                  ? 'hd-gloss-btn text-white'
-                  : 'bg-white border-2 border-[#EC69A8] text-[#38001E] hover:bg-[#F9BCDA]'
+                  ? 'bg-[#3B0764] text-white shadow-xs'
+                  : 'bg-white border border-[#E9D5FF] text-[#3B0764] hover:bg-[#FAF5FF]'
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
@@ -620,14 +591,14 @@ export default function App() {
               <>
                 <button
                   onClick={() => setIframeRefreshKey((k) => k + 1)}
-                  className="p-1.5 rounded-lg bg-white border-2 border-[#EC69A8] hover:bg-[#F9BCDA] text-[#38001E] cursor-pointer"
+                  className="p-1.5 rounded-lg bg-white border border-[#E9D5FF] hover:bg-[#FAF5FF] text-[#4C1D95] cursor-pointer"
                   title="Reload Form"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setFullScreenModule(!fullScreenModule)}
-                  className="p-1.5 rounded-lg bg-white border-2 border-[#EC69A8] hover:bg-[#F9BCDA] text-[#38001E] cursor-pointer"
+                  className="p-1.5 rounded-lg bg-white border border-[#E9D5FF] hover:bg-[#FAF5FF] text-[#4C1D95] cursor-pointer"
                   title="Full Screen Toggle"
                 >
                   {fullScreenModule ? (
@@ -656,6 +627,7 @@ export default function App() {
             initialTab={adminTab}
             initialTableFilter={adminTableFilter}
             currentUserId={user.id}
+            isCurrentUserAdmin={isCurrentUserAdmin}
             onPermissionsUpdated={refreshSessionPermissions}
             onOpenModule={(modKey) => {
               setActiveModuleKey(modKey);
@@ -663,7 +635,7 @@ export default function App() {
             }}
           />
         ) : (
-          <div className="flex-1 w-full h-full bg-[#FDE2EF] relative">
+          <div className="flex-1 w-full h-full bg-[#FAF7FD] relative">
             <iframe
               key={`${activeModuleMeta.key}-${user.id}-${iframeRefreshKey}`}
               src={`/api/modules/${activeModuleMeta.key}/render?userId=${user.id}`}

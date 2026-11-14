@@ -420,12 +420,127 @@ async function startServer() {
       return;
     }
     const columns = db.prepare(`PRAGMA table_info("${tableName}")`).all();
-    const rows = db.prepare(`SELECT * FROM "${tableName}" ORDER BY rowid DESC LIMIT 100`).all();
+    const rows = db.prepare(`SELECT rowid as __rowid__, * FROM "${tableName}" ORDER BY rowid DESC LIMIT 200`).all();
     res.json({ ok: true, tableName, columns, rows });
   });
 
+  // Helper to verify the requester is an Admin user
+  const verifyIsAdminUser = (userId: any): boolean => {
+    const id = Number(userId || 0);
+    if (!id) return false;
+    const row = db
+      .prepare(
+        `SELECT u.id, u.username, r.name as role_name, r.is_admin
+         FROM users u
+         JOIN roles r ON r.id = u.role_id
+         WHERE u.id = ?`
+      )
+      .get(id) as any;
+    if (!row) return false;
+    return Boolean(row.is_admin) || row.username === 'admin' || String(row.role_name).toLowerCase() === 'super admin';
+  };
+
+  // Admin-only Row Edit for any table in "production" database
+  app.put('/api/admin/database/tables/:tableName/rows', (req, res) => {
+    const tableName = String(req.params.tableName).replace(/[^a-zA-Z0-9_]/g, '');
+    const { userId, rowid, pkCol, pkVal, updatedFields } = req.body || {};
+
+    if (!verifyIsAdminUser(userId)) {
+      res.status(403).json({ ok: false, error: 'Only Admin is permitted to edit database rows.' });
+      return;
+    }
+
+    const exists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?").get(tableName);
+    if (!exists) {
+      res.status(404).json({ ok: false, error: 'Table not found in production database.' });
+      return;
+    }
+
+    const columns = db.prepare(`PRAGMA table_info("${tableName}")`).all() as {
+      name: string;
+      type: string;
+      pk: number;
+    }[];
+    const validCols = new Set(columns.map((c) => c.name));
+
+    const entries = Object.entries(updatedFields || {}).filter(
+      ([k]) => validCols.has(k) && k !== '__rowid__'
+    );
+    if (entries.length === 0) {
+      res.status(400).json({ ok: false, error: 'No valid columns provided for update.' });
+      return;
+    }
+
+    try {
+      const setClause = entries.map(([k]) => `"${k}" = ?`).join(', ');
+      const values = entries.map(([, v]) => (v === null || v === undefined ? null : v));
+
+      if (rowid !== undefined && rowid !== null) {
+        db.prepare(`UPDATE "${tableName}" SET ${setClause} WHERE rowid = ?`).run(...values, Number(rowid));
+      } else if (pkCol && validCols.has(String(pkCol))) {
+        db.prepare(`UPDATE "${tableName}" SET ${setClause} WHERE "${pkCol}" = ?`).run(...values, pkVal);
+      } else {
+        res.status(400).json({ ok: false, error: 'Row identifier (rowid or primary key) is required.' });
+        return;
+      }
+
+      syncSqliteTablesToPostgres(db, [tableName]).catch(() => {});
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(400).json({ ok: false, error: err.message || 'Failed to update row.' });
+    }
+  });
+
+  // Admin-only Row Delete for any table in "production" database
+  app.delete('/api/admin/database/tables/:tableName/rows', (req, res) => {
+    const tableName = String(req.params.tableName).replace(/[^a-zA-Z0-9_]/g, '');
+    const { userId, rowid, pkCol, pkVal } = req.body || {};
+
+    if (!verifyIsAdminUser(userId)) {
+      res.status(403).json({ ok: false, error: 'Only Admin is permitted to delete database rows.' });
+      return;
+    }
+
+    const exists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?").get(tableName);
+    if (!exists) {
+      res.status(404).json({ ok: false, error: 'Table not found in production database.' });
+      return;
+    }
+
+    if (tableName === 'users' && (Number(pkVal) === 1 || Number(rowid) === 1)) {
+      res.status(400).json({ ok: false, error: 'Primary Super Admin account (id=1) cannot be deleted.' });
+      return;
+    }
+
+    const columns = db.prepare(`PRAGMA table_info("${tableName}")`).all() as { name: string }[];
+    const validCols = new Set(columns.map((c) => c.name));
+
+    try {
+      if (tableName === 'users' && pkVal !== undefined) {
+        db.prepare('DELETE FROM user_permissions WHERE user_id = ?').run(pkVal);
+      }
+      if (tableName === 'roles' && pkVal !== undefined) {
+        db.prepare('DELETE FROM role_permissions WHERE role_id = ?').run(pkVal);
+      }
+
+      if (rowid !== undefined && rowid !== null) {
+        db.prepare(`DELETE FROM "${tableName}" WHERE rowid = ?`).run(Number(rowid));
+      } else if (pkCol && validCols.has(String(pkCol))) {
+        db.prepare(`DELETE FROM "${tableName}" WHERE "${pkCol}" = ?`).run(pkVal);
+      } else {
+        res.status(400).json({ ok: false, error: 'Row identifier (rowid or primary key) is required.' });
+        return;
+      }
+
+      syncSqliteTablesToPostgres(db, [tableName]).catch(() => {});
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(400).json({ ok: false, error: err.message || 'Failed to delete row.' });
+    }
+  });
+
   // ==========================================================================
-  // 3B. UNIFIED & DEPARTMENT-WISE REPORT SECTION ENDPOINT
+  // 3B. COMPREHENSIVE REPORT SECTION ENDPOINT (ALL TABLES, FIELDS & REPORT TYPES)
   // ==========================================================================
   app.get('/api/reports', (req, res) => {
     const userId = Number(req.query.userId || 1);
@@ -442,118 +557,312 @@ async function startServer() {
 
     const unifiedRows: any[] = [];
     const departmentSummaries: any[] = [];
-    const rawTablesByModule: Record<string, { tableName: string; rows: any[] }[]> = {};
+    const rawTablesByModule: Record<
+      string,
+      {
+        tableName: string;
+        moduleName: string;
+        columns: { name: string; type: string; pk: boolean }[];
+        rows: any[];
+      }[]
+    > = {};
+
+    const normalizeShiftLabel = (raw: any): 'A' | 'B' | 'C' | 'General' => {
+      const s = String(raw || '').trim().toUpperCase();
+      if (s === 'A' || s === 'SHIFT A' || s.endsWith(' A')) return 'A';
+      if (s === 'B' || s === 'SHIFT B' || s.endsWith(' B')) return 'B';
+      if (s === 'C' || s === 'SHIFT C' || s.endsWith(' C')) return 'C';
+      return 'General';
+    };
 
     for (const mod of reportableModules) {
       if (moduleFilter !== 'all' && mod.key !== moduleFilter) continue;
 
       let modRecordCount = 0;
+      let shiftACount = 0;
+      let shiftBCount = 0;
+      let shiftCCount = 0;
       let modTotalPrimary = 0;
       let modPrimaryUnit = 'Units';
+      let modTotalSecondary = 0;
+      let modSecondaryUnit = 'Cuts';
+      let modBreakdownMins = 0;
       rawTablesByModule[mod.key] = [];
 
       for (const tbl of mod.tables) {
-        if (tbl.endsWith('_masters') || tbl.endsWith('_settings') || tbl.endsWith('_options')) {
-          continue;
-        }
         try {
-          const rows = db.prepare(`SELECT * FROM "${tbl}" ORDER BY rowid DESC LIMIT 250`).all() as any[];
-          rawTablesByModule[mod.key].push({ tableName: tbl, rows });
+          const pragmaCols = (db.prepare(`PRAGMA table_info("${tbl}")`).all() as any[]).map((c) => ({
+            name: String(c.name),
+            type: String(c.type || 'TEXT'),
+            pk: Boolean(c.pk),
+          }));
 
-          for (const r of rows) {
+          const rawDbRows = db.prepare(`SELECT * FROM "${tbl}" ORDER BY rowid DESC LIMIT 500`).all() as any[];
+          const extraJsonKeys = new Set<string>();
+          const enrichedRows: any[] = [];
+
+          for (const r of rawDbRows) {
             const rowDate = String(
-              r.entry_date || r.shift_date || r.record_date || (r.started_at ? r.started_at.slice(0, 10) : '') || (r.created_at ? r.created_at.slice(0, 10) : '')
+              r.entry_date ||
+                r.shift_date ||
+                r.record_date ||
+                (r.started_at ? String(r.started_at).slice(0, 10) : '') ||
+                (r.created_at ? String(r.created_at).slice(0, 10) : '') ||
+                (r.updated_at ? String(r.updated_at).slice(0, 10) : '')
             );
-            const rowShift = String(r.shift || r.shift_name || 'General');
+            const rawShiftVal = String(r.shift || r.shift_name || '');
+            const normShift = normalizeShiftLabel(rawShiftVal);
 
-            if (fromDate && rowDate && rowDate < fromDate) continue;
-            if (toDate && rowDate && rowDate > toDate) continue;
-            if (shiftFilter !== 'all' && !rowShift.toLowerCase().includes(shiftFilter)) continue;
+            const hasDateCol =
+              r.entry_date !== undefined ||
+              r.shift_date !== undefined ||
+              r.record_date !== undefined ||
+              r.started_at !== undefined;
+            const hasShiftCol = r.shift !== undefined || r.shift_name !== undefined;
+
+            if (fromDate && hasDateCol && rowDate && rowDate < fromDate) continue;
+            if (toDate && hasDateCol && rowDate && rowDate > toDate) continue;
+            if (shiftFilter !== 'all' && hasShiftCol) {
+              if (normShift.toLowerCase() !== shiftFilter && !rawShiftVal.toLowerCase().includes(shiftFilter)) {
+                continue;
+              }
+            }
+
+            // Unpack JSON payload columns so every form field is visible in table/field reports
+            const unpacked: Record<string, any> = {};
+            for (const jsonCol of ['raw_json', 'payload_json', 'row_json']) {
+              if (typeof r[jsonCol] === 'string' && r[jsonCol].trim().startsWith('{')) {
+                try {
+                  const parsed = JSON.parse(r[jsonCol]);
+                  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    for (const [k, v] of Object.entries(parsed)) {
+                      if (v !== null && typeof v !== 'object') {
+                        const fieldKey = r[k] !== undefined ? `json_${k}` : k;
+                        unpacked[fieldKey] = v;
+                        extraJsonKeys.add(fieldKey);
+                      } else if (Array.isArray(v)) {
+                        const summaryKey = `${k}_count`;
+                        unpacked[summaryKey] = v.length;
+                        extraJsonKeys.add(summaryKey);
+                      }
+                    }
+                  }
+                } catch {
+                  // ignore malformed json
+                }
+              }
+            }
+
+            const mergedRow = { ...r, ...unpacked };
+            enrichedRows.push(mergedRow);
+
+            // Skip master/setting/option config tables from production KPI totals
+            if (tbl.endsWith('_masters') || tbl.endsWith('_settings') || tbl.endsWith('_options')) {
+              continue;
+            }
 
             const machine = String(
-              r.machine_no || r.loom_no || r.frame_no || r.press_no || r.round_no || r.round_id || r.po_number || '-'
+              mergedRow.machine_no ||
+                mergedRow.loom_no ||
+                mergedRow.frame_no ||
+                mergedRow.press_no ||
+                mergedRow.machine ||
+                mergedRow.loom ||
+                mergedRow.round_no ||
+                mergedRow.round_id ||
+                mergedRow.po_number ||
+                '-'
             );
             const quality = String(
-              r.quality || r.quality_count || r.order_color || r.grade_mix || r.pile_type || '-'
+              mergedRow.quality ||
+                mergedRow.quality_count ||
+                mergedRow.order_color ||
+                mergedRow.grade_mix ||
+                mergedRow.pile_type ||
+                mergedRow.buyer_mark ||
+                '-'
             );
             const operator = String(
-              r.operator_name || r.weaver_name || r.supervisor || r.buyer_mark || r.created_by || '-'
+              mergedRow.operator_name ||
+                mergedRow.weaver_name ||
+                mergedRow.supervisor ||
+                mergedRow.operator ||
+                mergedRow.weaver ||
+                mergedRow.buyer_mark ||
+                mergedRow.created_by ||
+                mergedRow.updated_by ||
+                '-'
+            );
+            const beamOrRound = String(
+              mergedRow.beam_no ||
+                mergedRow.round_no ||
+                mergedRow.round_id ||
+                mergedRow.bale_serial ||
+                mergedRow.po_number ||
+                mergedRow.group_id ||
+                '-'
             );
 
             let primaryVal = 0;
             let primaryLabel = '';
             let secondaryVal = 0;
             let secondaryLabel = '';
+            let efficiencyVal = Number(mergedRow.efficiency || mergedRow.eff || 0);
+            let breakdownVal = Number(mergedRow.duration_mins ?? mergedRow.down_mins ?? 0);
 
-            if (r.production_mt !== undefined) {
-              primaryVal = Number(r.production_mt || 0);
+            if (mergedRow.production_mt !== undefined) {
+              primaryVal = Number(mergedRow.production_mt || 0);
               primaryLabel = 'MT';
               modPrimaryUnit = 'MT';
-            } else if (r.total_mt !== undefined) {
-              primaryVal = Number(r.total_mt || 0);
+            } else if (mergedRow.total_mt !== undefined) {
+              primaryVal = Number(mergedRow.total_mt || 0);
               primaryLabel = 'MT';
-              secondaryVal = Number(r.total_cuts || r.total_bags || 0);
-              secondaryLabel = r.total_bags !== undefined ? 'Bags' : 'Cuts';
+              secondaryVal = Number(mergedRow.total_cuts || mergedRow.total_bags || 0);
+              secondaryLabel = mergedRow.total_bags !== undefined ? 'Bags' : 'Cuts';
               modPrimaryUnit = 'MT';
-            } else if (r.total_weight !== undefined) {
-              primaryVal = Number(r.total_weight || 0);
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.total_weight !== undefined) {
+              primaryVal = Number(mergedRow.total_weight || 0);
               primaryLabel = 'MT/Kg';
-              secondaryVal = Number(r.total_rolls || r.total_qty || 0);
-              secondaryLabel = r.total_rolls !== undefined ? 'Rolls' : 'Qty';
+              secondaryVal = Number(mergedRow.total_rolls || mergedRow.total_qty || 0);
+              secondaryLabel = mergedRow.total_rolls !== undefined ? 'Rolls' : 'Qty';
               modPrimaryUnit = 'MT/Kg';
-            } else if (r.net_wt_kg !== undefined) {
-              primaryVal = Number(r.net_wt_kg || 0);
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.net_wt_kg !== undefined) {
+              primaryVal = Number(mergedRow.net_wt_kg || 0);
               primaryLabel = 'Net Kg';
-              secondaryVal = Number(r.bags_per_bale || 0);
-              secondaryLabel = 'Bags';
+              secondaryVal = Number(mergedRow.bags_per_bale || mergedRow.gross_wt_kg || 0);
+              secondaryLabel = mergedRow.bags_per_bale !== undefined ? 'Bags' : 'Gross Kg';
               modPrimaryUnit = 'Net Kg';
-            } else if (r.meters !== undefined || r.net_meters !== undefined || r.total_meters !== undefined) {
-              primaryVal = Number(r.meters ?? r.net_meters ?? r.total_meters ?? 0);
+              modSecondaryUnit = secondaryLabel;
+            } else if (
+              mergedRow.meters !== undefined ||
+              mergedRow.net_meters !== undefined ||
+              mergedRow.total_meters !== undefined ||
+              mergedRow.verified_meters !== undefined ||
+              mergedRow.actual_meters !== undefined ||
+              mergedRow.produced_meters !== undefined
+            ) {
+              primaryVal = Number(
+                mergedRow.meters ??
+                  mergedRow.net_meters ??
+                  mergedRow.total_meters ??
+                  mergedRow.verified_meters ??
+                  mergedRow.actual_meters ??
+                  mergedRow.produced_meters ??
+                  0
+              );
               primaryLabel = 'Meters';
-              secondaryVal = Number(r.cuts || r.weight_kg || 0);
-              secondaryLabel = r.cuts !== undefined ? 'Cuts' : 'Kg';
+              secondaryVal = Number(
+                mergedRow.cuts ??
+                  mergedRow.total_cuts ??
+                  mergedRow.weight_kg ??
+                  mergedRow.target_meters ??
+                  mergedRow.book_meters ??
+                  0
+              );
+              secondaryLabel =
+                mergedRow.cuts !== undefined || mergedRow.total_cuts !== undefined
+                  ? 'Cuts'
+                  : mergedRow.weight_kg !== undefined
+                  ? 'Kg'
+                  : 'Target Mtr';
               modPrimaryUnit = 'Meters';
-            } else if (r.production_kg !== undefined) {
-              primaryVal = Number(r.production_kg || 0);
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.production_kg !== undefined) {
+              primaryVal = Number(mergedRow.production_kg || 0);
               primaryLabel = 'Kg';
-              secondaryVal = Number(r.efficiency || 0);
-              secondaryLabel = '% Eff';
+              secondaryVal = Number(mergedRow.doffs || mergedRow.efficiency || 0);
+              secondaryLabel = mergedRow.doffs !== undefined ? 'Doffs' : '% Eff';
               modPrimaryUnit = 'Kg';
-            } else if (r.weight_mt !== undefined) {
-              primaryVal = Number(r.weight_mt || 0);
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.weight_mt !== undefined) {
+              primaryVal = Number(mergedRow.weight_mt || 0);
               primaryLabel = 'MT';
-              secondaryVal = Number(r.rolls_count || 0);
-              secondaryLabel = 'Rolls';
+              secondaryVal = Number(
+                mergedRow.rolls_count ?? mergedRow.cuts ?? mergedRow.bags ?? mergedRow.qty ?? 0
+              );
+              secondaryLabel =
+                mergedRow.rolls_count !== undefined
+                  ? 'Rolls'
+                  : mergedRow.bags !== undefined
+                  ? 'Bags'
+                  : mergedRow.qty !== undefined
+                  ? 'Qty'
+                  : 'Cuts';
               modPrimaryUnit = 'MT';
-            } else if (r.closing_stock !== undefined) {
-              primaryVal = Number(r.closing_stock || 0);
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.weight_kg !== undefined) {
+              primaryVal = Number(mergedRow.weight_kg || 0);
+              primaryLabel = 'Kg';
+              secondaryVal = Number(mergedRow.rolls || mergedRow.cuts || 0);
+              secondaryLabel = mergedRow.rolls !== undefined ? 'Rolls' : 'Cuts';
+              modPrimaryUnit = 'Kg';
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.closing_stock !== undefined) {
+              primaryVal = Number(mergedRow.closing_stock || 0);
               primaryLabel = 'Stock MT';
-            } else if (r.duration_mins !== undefined || r.down_mins !== undefined) {
-              primaryVal = Number(r.duration_mins ?? r.down_mins ?? 0);
+              secondaryVal = Number(mergedRow.consumed_qty || mergedRow.received_qty || 0);
+              secondaryLabel = 'Consumed MT';
+            } else if (mergedRow.net_reading !== undefined || mergedRow.closing_reading !== undefined) {
+              primaryVal = Number(mergedRow.net_reading ?? mergedRow.closing_reading ?? 0);
+              primaryLabel = 'Meter Rdg';
+              secondaryVal = Number(mergedRow.opening_reading || 0);
+              secondaryLabel = 'Open Rdg';
+            } else if (breakdownVal > 0) {
+              primaryVal = breakdownVal;
               primaryLabel = 'Down Mins';
             }
 
             modRecordCount += 1;
-            modTotalPrimary += primaryVal;
+            if (normShift === 'A') shiftACount += 1;
+            else if (normShift === 'B') shiftBCount += 1;
+            else if (normShift === 'C') shiftCCount += 1;
+
+            if (primaryLabel !== 'Down Mins') {
+              modTotalPrimary += primaryVal;
+            }
+            modTotalSecondary += secondaryVal;
+            modBreakdownMins += breakdownVal;
 
             unifiedRows.push({
               id: `${tbl}-${r.id || modRecordCount}`,
               moduleKey: mod.key,
               department: mod.shortName,
+              departmentFullName: mod.name,
               category: mod.category,
               tableName: tbl,
               date: rowDate || '-',
-              shift: rowShift,
+              shift: normShift,
+              rawShift: rawShiftVal || 'General',
               machine,
               quality,
               operator,
-              primaryVal,
-              primaryLabel,
-              secondaryVal,
-              secondaryLabel,
-              remarks: String(r.remarks || r.reason || r.status || ''),
+              beamOrRound,
+              primaryVal: Number(primaryVal.toFixed(2)),
+              primaryLabel: primaryLabel || 'Val',
+              secondaryVal: Number(secondaryVal.toFixed(2)),
+              secondaryLabel: secondaryLabel || '',
+              efficiencyVal: Number(efficiencyVal.toFixed(2)),
+              breakdownMins: Number(breakdownVal.toFixed(2)),
+              remarks: String(mergedRow.remarks || mergedRow.reason || mergedRow.status || ''),
+              flatFields: mergedRow,
             });
           }
+
+          const finalColumns = [
+            ...pragmaCols.filter(
+              (c) => c.name !== 'raw_json' && c.name !== 'payload_json' && c.name !== 'row_json'
+            ),
+            ...Array.from(extraJsonKeys).map((k) => ({ name: k, type: 'JSON_FIELD', pk: false })),
+          ];
+
+          rawTablesByModule[mod.key].push({
+            tableName: tbl,
+            moduleName: mod.shortName,
+            columns: finalColumns,
+            rows: enrichedRows,
+          });
         } catch {
           // ignore table query errors
         }
@@ -565,8 +874,14 @@ async function startServer() {
         shortName: mod.shortName,
         category: mod.category,
         recordCount: modRecordCount,
+        shiftACount,
+        shiftBCount,
+        shiftCCount,
         totalPrimary: Number(modTotalPrimary.toFixed(2)),
         primaryUnit: modPrimaryUnit,
+        totalSecondary: Number(modTotalSecondary.toFixed(2)),
+        secondaryUnit: modSecondaryUnit,
+        breakdownMins: Number(modBreakdownMins.toFixed(2)),
         tables: mod.tables,
       });
     }
@@ -580,6 +895,7 @@ async function startServer() {
         name: m.name,
         shortName: m.shortName,
         category: m.category,
+        tables: m.tables,
       })),
       departmentSummaries,
       records: unifiedRows,
@@ -644,7 +960,7 @@ async function startServer() {
       res.status(403).send(`
         <!DOCTYPE html>
         <html>
-          <body style="font-family: sans-serif; padding: 3rem; text-align: center; color: #334155;">
+          <body style="font-family: 'Inter', system-ui, sans-serif; padding: 3rem; text-align: center; color: #0F172A; background: #F8FAFC;">
             <h2>Access Restricted</h2>
             <p>Your account does not have View permission for ${mod.name}.</p>
           </body>
@@ -687,147 +1003,18 @@ async function startServer() {
 
     const bridgeScript = `
 <style>
-  :root {
-    --plate-1: #9E0059;
-    --plate-2: #C90D6B;
-    --plate-3: #E62A82;
-    --plate-4: #F35BA0;
-    --plate-5: #EC69A8;
-    --plate-6: #F595C3;
-    --plate-7: #F9BCDA;
-    --plate-8: #FDE2EF;
-    --deep-ink: #38001E;
-    --primary: #9E0059 !important;
-    --primary-dark: #7A0045 !important;
-    --accent: #C90D6B !important;
-    --bg: #FDE2EF !important;
-    --card: #FFFFFF !important;
-    --text: #38001E !important;
-    --border: #EC69A8 !important;
-  }
-
-  p.hint, p.sub, p.subtext, #rp-generated, #beam-status, #cut-status, #lb-worker-info {
+  /* Preserve 100% Original Theme of all 16 Department Forms while hiding internal login, logout, helper text & individual report tabs */
+  #page-login, #loginScreen, .login-wrap, .login-card,
+  .logout-btn, #logoutBtn, button[onclick*="doLogout"], button[onclick*="logout"],
+  p.hint, p.sub, p.subtext, #rp-generated, #beam-status, #cut-status, #lb-worker-info,
+  #tab-report, #page-report, #tab-reports, section#report, div#report, section#tab-report, div#tab-report,
+  [data-tab="report"], [data-tab="reports"], [data-t="rep"],
+  button[onclick*="showMainTab('report')"],
+  button[onclick*="showTab('report'"],
+  button[onclick*="switchTab('report')"],
+  div.navtab[onclick*="showTab('report')"],
+  #rep, #view-rep, #tab-rep {
     display: none !important;
-  }
-
-  html, body {
-    background: linear-gradient(180deg, #FDE2EF 0%, #F9BCDA 100%) !important;
-    color: #38001E !important;
-    font-weight: 800 !important;
-  }
-
-  h1, h2, h3, h4, h5, h6, .title, .section-title, .card-title {
-    color: #38001E !important;
-    font-weight: 900 !important;
-  }
-
-  header, .header, .topbar, .app-header, nav.top-nav, .hero-bar, .bg-blue-900, .bg-indigo-900, .bg-slate-900, .bg-teal-900, .bg-emerald-900 {
-    background: linear-gradient(135deg, #9E0059 0%, #C90D6B 45%, #E62A82 80%, #F35BA0 100%) !important;
-    color: #FFFFFF !important;
-    border-bottom: 2px solid #F595C3 !important;
-    box-shadow: inset 0 2px 1px rgba(255,255,255,0.42), 0 8px 20px -4px rgba(158,0,89,0.35) !important;
-  }
-
-  header h1, header h2, header h3, .header h1, .header h2, .topbar h1, .topbar h2, .topbar .title, .app-header h1, .app-header h2 {
-    color: #FFFFFF !important;
-    font-weight: 900 !important;
-  }
-
-  /* Active / Selected buttons inside top header (white pill -> Deep Bold Berry text) */
-  header button.bg-white,
-  header button.active,
-  header .tab.active,
-  header .tab-btn.active,
-  header .nav-btn.active,
-  .header button.bg-white,
-  .header button.active,
-  .topbar button.active,
-  .topbar .tab.active,
-  .app-header button.active {
-    background: #FFFFFF !important;
-    color: #38001E !important;
-    border: 2px solid #FDE2EF !important;
-    font-weight: 900 !important;
-    box-shadow: 0 3px 10px rgba(56, 0, 30, 0.25) !important;
-  }
-
-  header button.bg-white *,
-  header button.active *,
-  header .tab.active *,
-  header .tab-btn.active *,
-  header .nav-btn.active *,
-  .header button.bg-white *,
-  .header button.active *,
-  .topbar button.active *,
-  .topbar .tab.active *,
-  .app-header button.active * {
-    color: #38001E !important;
-    font-weight: 900 !important;
-  }
-
-  .card, .panel, .section-card, .box, .form-card, div.bg-white, section.bg-white, main.bg-white {
-    background: linear-gradient(180deg, #FFFFFF 0%, #FFF7FB 70%, #FDE2EF 100%) !important;
-    border: 2px solid #F595C3 !important;
-    box-shadow: inset 0 1px 0 #FFFFFF, 0 8px 20px -6px rgba(158,0,89,0.16) !important;
-    color: #38001E !important;
-  }
-
-  label, .label, .field-label, span, p, div {
-    font-weight: 800;
-  }
-
-  label, .label, .field-label {
-    color: #38001E !important;
-    font-weight: 900 !important;
-  }
-
-  input, select, textarea {
-    background-color: #FFFFFF !important;
-    color: #38001E !important;
-    font-weight: 800 !important;
-    border: 2px solid #EC69A8 !important;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    border-color: #9E0059 !important;
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(201, 13, 107, 0.22) !important;
-  }
-
-  table {
-    border-collapse: collapse !important;
-  }
-
-  thead tr, th {
-    background: linear-gradient(180deg, #C90D6B 0%, #9E0059 100%) !important;
-    color: #FFFFFF !important;
-    font-weight: 900 !important;
-    border-color: #F595C3 !important;
-  }
-
-  tbody td, td {
-    color: #38001E !important;
-    font-weight: 800 !important;
-    border-color: #F595C3 !important;
-  }
-
-  tbody tr:nth-child(even) {
-    background-color: #FDE2EF !important;
-  }
-
-  tbody tr:hover {
-    background-color: #F9BCDA !important;
-  }
-
-  button, .btn, .tab-btn, .nav-btn, input[type="submit"], input[type="button"] {
-    font-weight: 900 !important;
-  }
-
-  button.primary, .btn-primary, .btn-save, button[type="submit"] {
-    background: linear-gradient(180deg, #E62A82 0%, #C90D6B 52%, #9E0059 100%) !important;
-    color: #FFFFFF !important;
-    border: 1px solid #9E0059 !important;
-    box-shadow: inset 0 1.5px 0 rgba(255,255,255,0.5), 0 4px 10px rgba(158,0,89,0.3) !important;
   }
 </style>
 <script>
@@ -835,65 +1022,55 @@ async function startServer() {
   window.__BJM_USER__ = ${JSON.stringify({
     id: user?.id || 1,
     username: user?.username || 'admin',
-    fullName: user?.full_name || 'Administrator',
+    fullName: user?.full_name || 'ANKANA',
     roleName: user?.role_name || 'Super Admin',
   })};
   window.__BJM_PERMS__ = ${JSON.stringify(modPerm)};
   window.__BJM_MODULE__ = ${JSON.stringify(mod.key)};
   var STRIP_PHRASES = ${JSON.stringify(phrasesToStrip)};
 
-  function ensureMenuButtonContrast() {
+  function hideLoginLogoutAndReportTabs() {
     try {
-      var btns = document.querySelectorAll('header button, .header button, .topbar button, .app-header button, nav button, .tabs button, .tab-bar button, .tab, .tab-btn, .nav-btn');
-      for (var i = 0; i < btns.length; i++) {
-        var b = btns[i];
-        var cls = (b.className || '') + '';
-        var cs = window.getComputedStyle(b);
-        var bg = cs.backgroundColor || '';
-        var bgImg = cs.backgroundImage || '';
-        var isLightBg = false;
-
-        if (cls.indexOf('bg-white') !== -1 || cls.indexOf('bg-amber') !== -1 || cls.indexOf('bg-yellow') !== -1 || cls.indexOf('bg-pink-50') !== -1 || cls.indexOf('bg-gray-100') !== -1) {
-          isLightBg = true;
-        } else if (bg.indexOf('rgb') === 0 && bg.indexOf('rgba(0, 0, 0, 0)') === -1) {
-          var parts = bg.match(/\\d+(\\.\\d+)?/g);
-          if (parts && parts.length >= 3) {
-            var r = parseFloat(parts[0]);
-            var g = parseFloat(parts[1]);
-            var bl = parseFloat(parts[2]);
-            var alpha = parts.length >= 4 ? parseFloat(parts[3]) : 1;
-            if (alpha > 0.5 && (r * 0.299 + g * 0.587 + bl * 0.114) > 165) {
-              isLightBg = true;
-            }
-          }
+      var authSelectors = [
+        '#page-login', '#loginScreen', '.login-wrap', '.login-card',
+        '.logout-btn', '#logoutBtn', 'button[onclick*="doLogout"]', 'button[onclick*="logout"]'
+      ];
+      for (var a = 0; a < authSelectors.length; a++) {
+        var authEls = document.querySelectorAll(authSelectors[a]);
+        for (var k = 0; k < authEls.length; k++) {
+          authEls[k].style.setProperty('display', 'none', 'important');
         }
+      }
 
-        // Also check if button is active inside header
-        var inHeader = Boolean(b.closest('header, .header, .topbar, .app-header'));
-        var isActive = cls.indexOf('active') !== -1 || b.getAttribute('aria-selected') === 'true';
+      var reportSelectors = [
+        '#tab-report', '#page-report', '#tab-reports', 'section#report', 'div#report',
+        'section#tab-report', 'div#tab-report', '[data-tab="report"]', '[data-tab="reports"]',
+        '[data-t="rep"]', '#rep', '#view-rep', '#tab-rep',
+        'button[onclick*="showMainTab(\\'report\\')"]',
+        'button[onclick*="showTab(\\'report\\'"]',
+        'button[onclick*="switchTab(\\'report\\')"]',
+        'div.navtab[onclick*="showTab(\\'report\\')"]'
+      ];
+      for (var s = 0; s < reportSelectors.length; s++) {
+        var els = document.querySelectorAll(reportSelectors[s]);
+        for (var i = 0; i < els.length; i++) {
+          els[i].style.setProperty('display', 'none', 'important');
+        }
+      }
 
-        if (inHeader && (isLightBg || isActive)) {
-          b.style.setProperty('background', '#FFFFFF', 'important');
-          b.style.setProperty('color', '#38001E', 'important');
-          var kids = b.querySelectorAll('*');
-          for (var k = 0; k < kids.length; k++) {
-            kids[k].style.setProperty('color', '#38001E', 'important');
-          }
-        } else if (inHeader && !isLightBg && !isActive) {
-          b.style.setProperty('color', '#FFFFFF', 'important');
-          var kids2 = b.querySelectorAll('*');
-          for (var k2 = 0; k2 < kids2.length; k2++) {
-            kids2[k2].style.setProperty('color', '#FFFFFF', 'important');
-          }
-        } else if (!inHeader && isLightBg && bgImg === 'none') {
-          b.style.setProperty('color', '#38001E', 'important');
+      var tabBtns = document.querySelectorAll('header button, .header button, .topbar button, nav button, .tabs button, .tab-bar button, .navtab, .tab-btn');
+      for (var j = 0; j < tabBtns.length; j++) {
+        var btn = tabBtns[j];
+        var label = (btn.textContent || '').replace(/[^a-zA-Z]/g, '').trim().toLowerCase();
+        if (label === 'report' || label === 'reports' || label === 'logout') {
+          btn.style.setProperty('display', 'none', 'important');
         }
       }
     } catch (e) {}
   }
 
   function cleanUnwantedHelperTexts() {
-    ensureMenuButtonContrast();
+    hideLoginLogoutAndReportTabs();
     try {
       var nodes = document.querySelectorAll('p, div.muted, span.muted, #rp-generated, #beam-status, #cut-status, #lb-worker-info');
       for (var i = 0; i < nodes.length; i++) {
@@ -925,8 +1102,8 @@ async function startServer() {
   }
 
   document.addEventListener('click', function() {
-    setTimeout(ensureMenuButtonContrast, 10);
-    setTimeout(ensureMenuButtonContrast, 80);
+    setTimeout(hideLoginLogoutAndReportTabs, 10);
+    setTimeout(hideLoginLogoutAndReportTabs, 80);
   }, true);
 
   // Non-blocking toast banner for native alert() calls inside iframe
@@ -936,7 +1113,7 @@ async function startServer() {
       if (existing) existing.remove();
       var div = document.createElement('div');
       div.id = 'bjm-bridge-toast';
-      div.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999999;max-width:420px;padding:12px 18px;border-radius:8px;font-family:system-ui,sans-serif;font-size:13px;font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,0.22);color:#fff;background:' + (isError ? '#dc2626' : '#0f766e') + ';transition:opacity 0.25s ease;';
+      div.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999999;max-width:420px;padding:12px 18px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 10px 25px rgba(15,23,42,0.12);color:' + (isError ? '#991B1B' : '#065F46') + ';border:1px solid ' + (isError ? '#FECACA' : '#A7F3D0') + ';background:' + (isError ? '#FEF2F2' : '#ECFDF5') + ';transition:opacity 0.25s ease;';
       div.textContent = String(message || '');
       document.body.appendChild(div);
       setTimeout(function() {
@@ -965,11 +1142,12 @@ async function startServer() {
         }
         return function() {
           var args = Array.prototype.slice.call(arguments);
+          var fnName = String(prop);
           fetch('/api/rpc/' + window.__BJM_MODULE__, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              fnName: String(prop),
+              fnName: fnName,
               args: args,
               userId: window.__BJM_USER__.id
             })
@@ -986,6 +1164,9 @@ async function startServer() {
             }
             if (typeof successHandler === 'function') {
               successHandler(res.body.result);
+            }
+            if (window.__BJM_MODULE__ === 'spinning' && fnName === 'saveProduction' && typeof window.loadProductionDashboard === 'function') {
+              setTimeout(function() { try { window.loadProductionDashboard(); } catch (e) {} }, 80);
             }
             setTimeout(cleanUnwantedHelperTexts, 30);
           })
@@ -1006,57 +1187,63 @@ async function startServer() {
     }
   };
 
-  // Auto-authenticate legacy internal login screens (Carding, Spinning, Spreader)
+  // Auto-authenticate internal login screens (Carding, Spinning, Spreader)
   // and enforce module-level RBAC/User permissions in UI controls
   function applySsoAndPermissions() {
     cleanUnwantedHelperTexts();
     var modKey = window.__BJM_MODULE__;
     var user = window.__BJM_USER__;
     var perms = window.__BJM_PERMS__;
+    var displayUserName = user.fullName || user.username || 'ANKANA';
 
     // 1. Carding SSO bypass
     if (modKey === 'carding') {
       var loginPage = document.getElementById('page-login');
-      if (loginPage) loginPage.style.display = 'none';
-      if (typeof window.enterApp === 'function') {
-        try { window.enterApp(user.fullName); } catch (e) {}
+      if (loginPage) loginPage.style.setProperty('display', 'none', 'important');
+      var cardApp = document.getElementById('app') || document.getElementById('app-container') || document.getElementById('main-app');
+      if (cardApp) cardApp.style.setProperty('display', 'block', 'important');
+      if (!window.__BJM_CARD_INIT__ && typeof window.enterApp === 'function') {
+        window.__BJM_CARD_INIT__ = true;
+        try { window.enterApp(); } catch (e) {}
       }
-      var appContainer = document.getElementById('app-container') || document.getElementById('main-app');
-      if (appContainer) appContainer.style.display = 'block';
     }
 
-    // 2. Spinning SSO bypass
+    // 2. Spinning SSO bypass (Doc 13 uses #loginScreen and #appScreen)
     if (modKey === 'spinning') {
       var spinLogin = document.getElementById('loginScreen');
-      if (spinLogin) spinLogin.style.display = 'none';
-      var spinMain = document.getElementById('mainApp');
-      if (spinMain) {
-        spinMain.classList.remove('hidden');
-        spinMain.style.display = 'block';
+      if (spinLogin) spinLogin.style.setProperty('display', 'none', 'important');
+      var spinApp = document.getElementById('appScreen') || document.getElementById('mainApp');
+      if (spinApp) {
+        spinApp.classList.remove('hidden');
+        spinApp.style.setProperty('display', 'block', 'important');
       }
       var welcomeUser = document.getElementById('welcomeUser');
-      if (welcomeUser) welcomeUser.textContent = user.fullName;
-      if (typeof window.initDefaults === 'function') {
+      if (welcomeUser) welcomeUser.textContent = displayUserName;
+      if (!window.__BJM_SPIN_INIT__ && typeof window.initDefaults === 'function') {
+        window.__BJM_SPIN_INIT__ = true;
         try { window.initDefaults(); } catch (e) {}
       }
     }
 
-    // 3. Spreader SSO bypass
+    // 3. Spreader SSO bypass (Doc 14 uses #loginScreen, #appScreen with display:block, and string CURRENT_USER)
     if (modKey === 'spreader') {
       var spreadLogin = document.getElementById('loginScreen');
-      if (spreadLogin) spreadLogin.style.display = 'none';
+      if (spreadLogin) spreadLogin.style.setProperty('display', 'none', 'important');
       var spreadApp = document.getElementById('appScreen');
       if (spreadApp) {
         spreadApp.classList.remove('hidden');
-        spreadApp.style.display = 'flex';
+        spreadApp.style.setProperty('display', 'block', 'important');
       }
       try {
-        window.CURRENT_USER = { username: user.username, name: user.fullName, role: user.roleName };
+        window.CURRENT_USER = displayUserName;
       } catch (e) {}
-      var badge = document.getElementById('userBadgeName');
-      if (badge) badge.textContent = user.fullName;
-      if (typeof window.loadLogBookRecent === 'function') {
-        try { window.loadLogBookRecent(); } catch (e) {}
+      var loggedUserEl = document.getElementById('loggedUser') || document.getElementById('userBadgeName');
+      if (loggedUserEl) loggedUserEl.textContent = displayUserName;
+      if (!window.__BJM_SPREAD_INIT__) {
+        window.__BJM_SPREAD_INIT__ = true;
+        if (typeof window.loadLogBookRecent === 'function') {
+          try { window.loadLogBookRecent(); } catch (e) {}
+        }
       }
     }
 
@@ -1078,8 +1265,8 @@ async function startServer() {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       cleanUnwantedHelperTexts();
-      setTimeout(applySsoAndPermissions, 60);
-      setTimeout(applySsoAndPermissions, 350);
+      setTimeout(applySsoAndPermissions, 40);
+      setTimeout(applySsoAndPermissions, 250);
       try {
         var obs = new MutationObserver(function() { cleanUnwantedHelperTexts(); });
         obs.observe(document.body, { childList: true, subtree: true });
@@ -1087,7 +1274,8 @@ async function startServer() {
     });
   } else {
     cleanUnwantedHelperTexts();
-    setTimeout(applySsoAndPermissions, 60);
+    setTimeout(applySsoAndPermissions, 40);
+    setTimeout(applySsoAndPermissions, 250);
   }
 })();
 </script>
