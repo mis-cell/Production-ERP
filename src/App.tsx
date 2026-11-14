@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   FileText,
   BarChart3,
@@ -13,6 +13,8 @@ import {
   Menu,
   Lock,
   User as UserIcon,
+  AlertTriangle,
+  Power,
 } from 'lucide-react';
 import { UserSession, EffectivePermission, ModuleMeta } from './types';
 import { AdminConsole } from './components/AdminConsole';
@@ -187,6 +189,105 @@ export default function App() {
   const [fullScreenModule, setFullScreenModule] = useState(false);
   const [iframeRefreshKey, setIframeRefreshKey] = useState(0);
 
+  // Maintenance Mode State & Popup Modal
+  const [maintenanceActive, setMaintenanceActive] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState(
+    'Server is under maintenance. We will be back shortly.'
+  );
+  const [maintenancePopup, setMaintenancePopup] = useState<string | null>(null);
+
+  const checkMaintenanceStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/system/maintenance');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok && data.maintenance) {
+        const active = Boolean(data.maintenance.active);
+        const msg =
+          data.maintenance.message || 'Server is under maintenance. We will be back shortly.';
+        setMaintenanceActive(active);
+        setMaintenanceMessage(msg);
+
+        if (active && user) {
+          const isAdminUser = Boolean(
+            user.isAdmin ||
+              user.username.toLowerCase() === 'admin' ||
+              user.roleName.toLowerCase() === 'super admin'
+          );
+          if (!isAdminUser) {
+            setUser(null);
+            setPermissions([]);
+            setMaintenancePopup(msg);
+          }
+        }
+      }
+    } catch {
+      // ignore network error
+    }
+  }, [user]);
+
+  useEffect(() => {
+    checkMaintenanceStatus();
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        checkMaintenanceStatus();
+      }
+    }, 15000);
+    const onFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        checkMaintenanceStatus();
+      }
+    };
+    window.addEventListener('focus', onFocusOrVisible);
+    document.addEventListener('visibilitychange', onFocusOrVisible);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', onFocusOrVisible);
+      document.removeEventListener('visibilitychange', onFocusOrVisible);
+    };
+  }, [checkMaintenanceStatus]);
+
+  useEffect(() => {
+    const onMessage = (ev: MessageEvent) => {
+      if (ev.data && ev.data.type === 'BJM_MAINTENANCE_ACTIVE') {
+        const msg =
+          ev.data.message || 'Server is under maintenance. We will be back shortly.';
+        setMaintenanceActive(true);
+        setMaintenanceMessage(msg);
+        setUser(null);
+        setPermissions([]);
+        setMaintenancePopup(msg);
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  const handleToggleMaintenance = async (nextActive: boolean, customMsg?: string) => {
+    if (!user) return;
+    try {
+      const res = await fetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          active: nextActive,
+          message: customMsg || maintenanceMessage,
+        }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.ok && data.maintenance) {
+        setMaintenanceActive(Boolean(data.maintenance.active));
+        setMaintenanceMessage(
+          data.maintenance.message || 'Server is under maintenance. We will be back shortly.'
+        );
+      }
+    } catch {
+      // ignore network error
+    }
+  };
+
   const performLogin = async (usernameVal: string, passwordVal: string) => {
     setLoggingIn(true);
     setLoginError('');
@@ -198,8 +299,21 @@ export default function App() {
       });
       const data = await res.json();
       if (!data.ok) {
+        if (data.maintenance) {
+          const msg =
+            data.error || 'Server is under maintenance. We will be back shortly.';
+          setMaintenanceActive(true);
+          setMaintenanceMessage(msg);
+          setMaintenancePopup(msg);
+        }
         setLoginError(data.error || 'Invalid username or password');
         return;
+      }
+      if (data.maintenance) {
+        setMaintenanceActive(Boolean(data.maintenance.active));
+        setMaintenanceMessage(
+          data.maintenance.message || 'Server is under maintenance. We will be back shortly.'
+        );
       }
       setUser(data.user);
       setPermissions(data.permissions || []);
@@ -221,6 +335,16 @@ export default function App() {
     try {
       const res = await fetch(`/api/auth/session/${user.id}`);
       const data = await res.json();
+      if (!data.ok && data.maintenance) {
+        const msg =
+          data.error || 'Server is under maintenance. We will be back shortly.';
+        setMaintenanceActive(true);
+        setMaintenanceMessage(msg);
+        setUser(null);
+        setPermissions([]);
+        setMaintenancePopup(msg);
+        return;
+      }
       if (data.ok) {
         setUser(data.user);
         setPermissions(data.permissions || []);
@@ -235,8 +359,48 @@ export default function App() {
     setPermissions([]);
   };
 
+  const maintenanceModalNode = maintenancePopup ? (
+    <div className="fixed inset-0 z-99999 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border-2 border-[#EA580C] overflow-hidden">
+        <div
+          className="px-6 py-4 flex items-center gap-3 text-white"
+          style={{
+            background: 'linear-gradient(90deg, #9D174D 0%, #DC2626 50%, #EA580C 100%)',
+          }}
+        >
+          <div className="p-2 rounded-xl bg-white/20">
+            <AlertTriangle className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold tracking-wide">Server Under Maintenance</h3>
+            <p className="text-[11px] text-amber-100 font-medium">
+              System Access Temporarily Paused
+            </p>
+          </div>
+        </div>
+        <div className="p-6 text-center space-y-4">
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-[#1E0538] text-sm font-bold leading-relaxed">
+            {maintenancePopup}
+          </div>
+          <p className="text-xs text-slate-600 font-medium">
+            Your active session has been safely logged out while system maintenance is in progress. Please try signing in again shortly.
+          </p>
+          <button
+            onClick={() => setMaintenancePopup(null)}
+            style={{
+              background: 'linear-gradient(90deg, #3B0764 0%, #9D174D 52%, #EA580C 100%)',
+            }}
+            className="w-full py-2.5 rounded-xl text-white text-xs font-bold tracking-wide cursor-pointer shadow-md hover:opacity-95"
+          >
+            OK, Got It
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // ==========================================================================
-  // STEP 1: YAJUR THEME LOGIN PAGE (WITH YAJUR LOTUS LOGO)
+  // STEP 1: YAJUR THEME LOGIN PAGE
   // ==========================================================================
   if (!user) {
     return (
@@ -246,6 +410,7 @@ export default function App() {
           background: 'linear-gradient(135deg, #1E0538 0%, #3B0764 52%, #831843 100%)',
         }}
       >
+        {maintenanceModalNode}
         <div className="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl border border-[#E9D5FF]">
           {/* Top YAJUR Lotus Gradient Accent Bar */}
           <div
@@ -264,6 +429,20 @@ export default function App() {
                 Production &amp; Operations Management System
               </p>
             </div>
+
+            {maintenanceActive && (
+              <div className="mt-4 p-3.5 rounded-xl bg-amber-50 border-2 border-amber-400 text-left flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-bold text-amber-900">
+                    Server Under Maintenance
+                  </div>
+                  <div className="text-[11px] font-semibold text-amber-800 mt-0.5">
+                    {maintenanceMessage}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {loginError && (
               <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-medium text-red-700 text-left">
@@ -587,6 +766,25 @@ export default function App() {
               Admin Panel
             </button>
 
+            {isCurrentUserAdmin && (
+              <button
+                onClick={() => handleToggleMaintenance(!maintenanceActive)}
+                title={
+                  maintenanceActive
+                    ? 'Click to Turn OFF Maintenance Mode'
+                    : 'Click to Turn ON Maintenance Mode (logs out all non-admin users)'
+                }
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                  maintenanceActive
+                    ? 'bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-xs animate-pulse'
+                    : 'bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100'
+                }`}
+              >
+                <Power className="w-3.5 h-3.5" />
+                {maintenanceActive ? 'Maintenance: ON' : 'Maintenance: OFF'}
+              </button>
+            )}
+
             {viewMode === 'form' && (
               <>
                 <button
@@ -612,6 +810,22 @@ export default function App() {
           </div>
         </header>
 
+        {/* Active Maintenance Banner for Admin */}
+        {maintenanceActive && isCurrentUserAdmin && (
+          <div className="bg-[#DC2626] text-white px-4 py-1.5 text-xs font-bold flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-200" />
+              MAINTENANCE MODE IS ACTIVE: All non-admin users are logged out and blocked ({maintenanceMessage})
+            </span>
+            <button
+              onClick={() => handleToggleMaintenance(false)}
+              className="px-2.5 py-0.5 rounded bg-white text-[#DC2626] text-[11px] font-bold hover:bg-red-50 cursor-pointer"
+            >
+              Turn OFF Now
+            </button>
+          </div>
+        )}
+
         {/* Main Viewport Content */}
         {viewMode === 'report' ? (
           <ReportSection
@@ -628,6 +842,9 @@ export default function App() {
             initialTableFilter={adminTableFilter}
             currentUserId={user.id}
             isCurrentUserAdmin={isCurrentUserAdmin}
+            maintenanceActive={maintenanceActive}
+            maintenanceMessage={maintenanceMessage}
+            onToggleMaintenance={handleToggleMaintenance}
             onPermissionsUpdated={refreshSessionPermissions}
             onOpenModule={(modKey) => {
               setActiveModuleKey(modKey);

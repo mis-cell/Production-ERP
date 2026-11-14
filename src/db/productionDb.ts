@@ -231,6 +231,13 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS system_settings (
+  setting_key TEXT PRIMARY KEY,
+  setting_value TEXT NOT NULL DEFAULT '',
+  updated_by TEXT NOT NULL DEFAULT 'admin',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- 1. CARDING DEPARTMENT TABLES
 CREATE TABLE IF NOT EXISTS carding_log_book (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1072,6 +1079,67 @@ function seedInitialData() {
     VALUES (?, ?, ?, ?, ?, ?, 1)
   `);
   insertUser.run('admin', 'admin123', 'ANKANA', 'BJM-001', 'All Departments', superAdminRoleId);
+}
+
+export interface MaintenanceState {
+  active: boolean;
+  message: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export function getMaintenanceState(): MaintenanceState {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        setting_key TEXT PRIMARY KEY,
+        setting_value TEXT NOT NULL DEFAULT '',
+        updated_by TEXT NOT NULL DEFAULT 'admin',
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+    const activeRow = db.prepare("SELECT * FROM system_settings WHERE setting_key = 'maintenance_mode'").get() as any;
+    const msgRow = db.prepare("SELECT * FROM system_settings WHERE setting_key = 'maintenance_message'").get() as any;
+    return {
+      active: activeRow?.setting_value === '1' || activeRow?.setting_value === 'true',
+      message: msgRow?.setting_value || 'Server is under maintenance. We will be back shortly.',
+      updatedBy: activeRow?.updated_by || 'admin',
+      updatedAt: activeRow?.updated_at || new Date().toISOString(),
+    };
+  } catch {
+    return {
+      active: false,
+      message: 'Server is under maintenance. We will be back shortly.',
+      updatedBy: 'admin',
+      updatedAt: new Date().toISOString(),
+    };
+  }
+}
+
+export function setMaintenanceState(active: boolean, message?: string, updatedBy: string = 'admin'): MaintenanceState {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS system_settings (
+      setting_key TEXT PRIMARY KEY,
+      setting_value TEXT NOT NULL DEFAULT '',
+      updated_by TEXT NOT NULL DEFAULT 'admin',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  const upsert = db.prepare(`
+    INSERT INTO system_settings (setting_key, setting_value, updated_by, updated_at)
+    VALUES (?, ?, ?, datetime('now'))
+    ON CONFLICT(setting_key) DO UPDATE SET
+      setting_value = excluded.setting_value,
+      updated_by = excluded.updated_by,
+      updated_at = datetime('now')
+  `);
+  upsert.run('maintenance_mode', active ? '1' : '0', updatedBy);
+  if (message !== undefined && String(message).trim()) {
+    upsert.run('maintenance_message', String(message).trim(), updatedBy);
+  } else if (!db.prepare("SELECT 1 FROM system_settings WHERE setting_key = 'maintenance_message'").get()) {
+    upsert.run('maintenance_message', 'Server is under maintenance. We will be back shortly.', updatedBy);
+  }
+  return getMaintenanceState();
 }
 
 export interface EffectiveModulePermission {

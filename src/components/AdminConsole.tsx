@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Users,
   Shield,
@@ -12,6 +12,8 @@ import {
   Edit3,
   Table as TableIcon,
   X,
+  AlertTriangle,
+  Power,
 } from 'lucide-react';
 import {
   AdminUserRecord,
@@ -25,6 +27,9 @@ interface AdminConsoleProps {
   initialTableFilter?: string;
   currentUserId: number;
   isCurrentUserAdmin?: boolean;
+  maintenanceActive?: boolean;
+  maintenanceMessage?: string;
+  onToggleMaintenance?: (active: boolean, message?: string) => Promise<void>;
   onPermissionsUpdated: () => void;
   onOpenModule: (moduleKey: string) => void;
 }
@@ -45,11 +50,16 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
   initialTableFilter = '',
   currentUserId,
   isCurrentUserAdmin = true,
+  maintenanceActive = false,
+  maintenanceMessage = 'Server is under maintenance. We will be back shortly.',
+  onToggleMaintenance,
   onPermissionsUpdated,
 }) => {
   const [activeTab, setActiveTab] = useState<'users' | 'roles' | 'database'>(initialTab);
   const [loading, setLoading] = useState(true);
   const [statusBanner, setStatusBanner] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [customMaintMsg, setCustomMaintMsg] = useState(maintenanceMessage);
+  const [togglingMaint, setTogglingMaint] = useState(false);
 
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [roles, setRoles] = useState<RoleRecord[]>([]);
@@ -101,6 +111,15 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
     setTimeout(() => setStatusBanner(null), 4000);
   };
 
+  const selectedUserIdRef = useRef(selectedUserId);
+  selectedUserIdRef.current = selectedUserId;
+  const selectedRoleIdRef = useRef(selectedRoleId);
+  selectedRoleIdRef.current = selectedRoleId;
+
+  useEffect(() => {
+    setCustomMaintMsg(maintenanceMessage);
+  }, [maintenanceMessage]);
+
   const fetchOverview = useCallback(async () => {
     setLoading(true);
     try {
@@ -108,6 +127,9 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         fetch('/api/admin/overview'),
         fetch('/api/admin/database/tables'),
       ]);
+      if (!ovRes.ok || !dbRes.ok) {
+        throw new Error('Failed to load admin console data');
+      }
       const ovData = await ovRes.json();
       const dbData = await dbRes.json();
 
@@ -115,13 +137,17 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         setUsers(ovData.users);
         setRoles(ovData.roles);
 
-        const targetUser = ovData.users.find((u: AdminUserRecord) => u.id === selectedUserId) || ovData.users[0];
+        const targetUser =
+          ovData.users.find((u: AdminUserRecord) => u.id === selectedUserIdRef.current) ||
+          ovData.users[0];
         if (targetUser) {
           setSelectedUserId(targetUser.id);
           setUserPermDraft(targetUser.effectivePermissions);
         }
 
-        const targetRole = ovData.roles.find((r: RoleRecord) => r.id === selectedRoleId) || ovData.roles[0];
+        const targetRole =
+          ovData.roles.find((r: RoleRecord) => r.id === selectedRoleIdRef.current) ||
+          ovData.roles[0];
         if (targetRole) {
           setSelectedRoleId(targetRole.id);
           setRolePermDraft(targetRole.permissions);
@@ -137,7 +163,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [selectedUserId, selectedRoleId]);
+  }, []);
 
   useEffect(() => {
     fetchOverview();
@@ -164,6 +190,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
     setLoadingTable(true);
     try {
       const res = await fetch(`/api/admin/database/tables/${tableName}`);
+      if (!res.ok) return;
       const data = await res.json();
       if (data.ok) {
         setTableData({ columns: data.columns || [], rows: data.rows || [] });
@@ -452,14 +479,109 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
               System Administration &amp; Permission Control
             </h1>
           </div>
-          <button
-            onClick={fetchOverview}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-semibold cursor-pointer self-start md:self-auto transition-colors"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#FDE68A] ${loading ? 'animate-spin' : ''}`} />
-            Refresh Admin Data
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {isCurrentUserAdmin && onToggleMaintenance && (
+              <button
+                disabled={togglingMaint}
+                onClick={async () => {
+                  setTogglingMaint(true);
+                  try {
+                    await onToggleMaintenance(!maintenanceActive, customMaintMsg);
+                    showToast(
+                      !maintenanceActive
+                        ? 'Maintenance Mode ACTIVATED — All non-admin users have been logged out and locked.'
+                        : 'Maintenance Mode DEACTIVATED — Server is now open to all users.'
+                    );
+                  } finally {
+                    setTogglingMaint(false);
+                  }
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-sm ${
+                  maintenanceActive
+                    ? 'bg-[#DC2626] hover:bg-[#B91C1C] text-white border border-red-300 animate-pulse'
+                    : 'bg-[#F59E0B] hover:bg-[#D97706] text-[#1E0538] border border-amber-300'
+                }`}
+              >
+                <Power className="w-3.5 h-3.5" />
+                {maintenanceActive ? 'Maintenance Mode: ON (Click to Turn OFF)' : 'Turn ON Maintenance Mode'}
+              </button>
+            )}
+            <button
+              onClick={fetchOverview}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-semibold cursor-pointer self-start md:self-auto transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#FDE68A] ${loading ? 'animate-spin' : ''}`} />
+              Refresh Admin Data
+            </button>
+          </div>
         </div>
+
+        {/* Admin Maintenance Mode Control Card */}
+        {isCurrentUserAdmin && onToggleMaintenance && (
+          <div
+            className={`rounded-2xl border p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+              maintenanceActive
+                ? 'bg-red-50 border-red-300 text-red-950'
+                : 'bg-white border-[#E9D5FF] text-[#1E0538]'
+            }`}
+          >
+            <div className="flex items-start gap-3 flex-1">
+              <div
+                className={`p-2.5 rounded-xl shrink-0 ${
+                  maintenanceActive ? 'bg-red-600 text-white' : 'bg-[#F3E8FF] text-[#6B21A8]'
+                }`}
+              >
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold">Server Maintenance Mode</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                      maintenanceActive
+                        ? 'bg-red-600 text-white'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    }`}
+                  >
+                    {maintenanceActive ? 'ACTIVE — USERS LOCKED OUT' : 'NORMAL OPERATION'}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={customMaintMsg}
+                  onChange={(e) => setCustomMaintMsg(e.target.value)}
+                  placeholder="Server is under maintenance. We will be back shortly."
+                  className="w-full px-3 py-1.5 text-xs font-medium rounded-lg border border-[#D8B4FE] bg-white text-[#1E0538] focus:outline-none focus:border-[#9D174D]"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                disabled={togglingMaint}
+                onClick={async () => {
+                  setTogglingMaint(true);
+                  try {
+                    await onToggleMaintenance(!maintenanceActive, customMaintMsg);
+                    showToast(
+                      !maintenanceActive
+                        ? 'Maintenance Mode is now ON.'
+                        : 'Maintenance Mode is now OFF.'
+                    );
+                  } finally {
+                    setTogglingMaint(false);
+                  }
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs ${
+                  maintenanceActive
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-[#DC2626] hover:bg-[#B91C1C] text-white'
+                }`}
+              >
+                {maintenanceActive ? 'Deactivate Maintenance Mode' : 'Activate Maintenance Mode'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Status Toast */}
         {statusBanner && (

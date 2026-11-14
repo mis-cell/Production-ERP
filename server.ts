@@ -9,6 +9,8 @@ import {
   getUserEffectivePermissions,
   executeModuleRpc,
   PRODUCTION_SCHEMA_SQL,
+  getMaintenanceState,
+  setMaintenanceState,
 } from './src/db/productionDb.ts';
 import {
   writePostgresHelperFiles,
@@ -64,9 +66,59 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: '15mb' }));
 
+  app.get('/favicon.ico', (_req, res) => {
+    res.status(204).end();
+  });
+
   // ==========================================================================
-  // 1. AUTHENTICATION & SESSION ROUTES
+  // 1. AUTHENTICATION, SESSION & MAINTENANCE MODE ROUTES
   // ==========================================================================
+  app.get('/api/system/maintenance', (_req, res) => {
+    res.json({
+      ok: true,
+      maintenance: getMaintenanceState(),
+    });
+  });
+
+  app.post('/api/admin/maintenance', (req, res) => {
+    const { userId, active, message } = req.body || {};
+    const adminRow = db
+      .prepare(
+        `SELECT u.id, u.username, r.name as role_name, r.is_admin
+         FROM users u
+         JOIN roles r ON r.id = u.role_id
+         WHERE u.id = ?`
+      )
+      .get(Number(userId || 0)) as any;
+
+    const isAdmin =
+      Boolean(adminRow?.is_admin) ||
+      String(adminRow?.username || '').toLowerCase() === 'admin' ||
+      String(adminRow?.role_name || '').toLowerCase() === 'super admin';
+
+    if (!isAdmin) {
+      res.status(403).json({ ok: false, error: 'Only Admin can change Maintenance Mode.' });
+      return;
+    }
+
+    const updated = setMaintenanceState(Boolean(active), message, adminRow?.username || 'admin');
+    db.prepare(`
+      INSERT INTO audit_logs (user_id, username, module_key, action_name, details)
+      VALUES (?, ?, 'system', ?, ?)
+    `).run(
+      adminRow.id,
+      adminRow.username,
+      updated.active ? 'maintenance_enabled' : 'maintenance_disabled',
+      updated.active ? `Maintenance ON: ${updated.message}` : 'Maintenance Mode turned OFF'
+    );
+    syncSqliteTablesToPostgres(db, ['system_settings', 'audit_logs']).catch(() => {});
+
+    res.json({
+      ok: true,
+      maintenance: updated,
+    });
+  });
+
   app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body || {};
     if (!username || !password) {
@@ -91,6 +143,21 @@ async function startServer() {
       return;
     }
 
+    const isUserAdmin =
+      Boolean(user.is_admin) ||
+      String(user.username || '').toLowerCase() === 'admin' ||
+      String(user.role_name || '').toLowerCase() === 'super admin';
+
+    const maintenance = getMaintenanceState();
+    if (maintenance.active && !isUserAdmin) {
+      res.status(503).json({
+        ok: false,
+        maintenance: true,
+        error: maintenance.message || 'Server is under maintenance. We will be back shortly.',
+      });
+      return;
+    }
+
     db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
     db.prepare(`
       INSERT INTO audit_logs (user_id, username, module_key, action_name, details)
@@ -110,9 +177,10 @@ async function startServer() {
         department: user.department,
         roleId: user.role_id,
         roleName: user.role_name,
-        isAdmin: Boolean(user.is_admin),
+        isAdmin: isUserAdmin,
       },
       permissions,
+      maintenance,
     });
   });
 
@@ -130,6 +198,22 @@ async function startServer() {
       return;
     }
 
+    const isUserAdmin =
+      Boolean(user.is_admin) ||
+      String(user.username || '').toLowerCase() === 'admin' ||
+      String(user.role_name || '').toLowerCase() === 'super admin';
+
+    const maintenance = getMaintenanceState();
+    if (maintenance.active && !isUserAdmin) {
+      res.status(503).json({
+        ok: false,
+        maintenance: true,
+        error: maintenance.message || 'Server is under maintenance. We will be back shortly.',
+        maintenanceState: maintenance,
+      });
+      return;
+    }
+
     res.json({
       ok: true,
       user: {
@@ -140,9 +224,10 @@ async function startServer() {
         department: user.department,
         roleId: user.role_id,
         roleName: user.role_name,
-        isAdmin: Boolean(user.is_admin),
+        isAdmin: isUserAdmin,
       },
       permissions: getUserEffectivePermissions(user.id),
+      maintenance,
     });
   });
 
@@ -703,12 +788,17 @@ async function startServer() {
                 '-'
             );
 
+            const safeNum = (v: any): number => {
+              const n = typeof v === 'number' ? v : parseFloat(String(v ?? '0'));
+              return Number.isFinite(n) ? n : 0;
+            };
+
             let primaryVal = 0;
             let primaryLabel = '';
             let secondaryVal = 0;
             let secondaryLabel = '';
-            let efficiencyVal = Number(mergedRow.efficiency || mergedRow.eff || 0);
-            let breakdownVal = Number(mergedRow.duration_mins ?? mergedRow.down_mins ?? 0);
+            let efficiencyVal = safeNum(mergedRow.efficiency || mergedRow.eff || 0);
+            let breakdownVal = safeNum(mergedRow.duration_mins ?? mergedRow.down_mins ?? 0);
 
             if (mergedRow.production_mt !== undefined) {
               primaryVal = Number(mergedRow.production_mt || 0);
@@ -819,6 +909,11 @@ async function startServer() {
             else if (normShift === 'B') shiftBCount += 1;
             else if (normShift === 'C') shiftCCount += 1;
 
+            primaryVal = safeNum(primaryVal);
+            secondaryVal = safeNum(secondaryVal);
+            efficiencyVal = safeNum(efficiencyVal);
+            breakdownVal = safeNum(breakdownVal);
+
             if (primaryLabel !== 'Down Mins') {
               modTotalPrimary += primaryVal;
             }
@@ -910,7 +1005,30 @@ async function startServer() {
     const { moduleKey } = req.params;
     const { fnName, args = [], userId = 1 } = req.body || {};
 
-    const user = db.prepare('SELECT id, username, full_name FROM users WHERE id = ?').get(Number(userId)) as any;
+    const user = db
+      .prepare(
+        `SELECT u.id, u.username, u.full_name, r.name as role_name, r.is_admin
+         FROM users u
+         JOIN roles r ON r.id = u.role_id
+         WHERE u.id = ?`
+      )
+      .get(Number(userId)) as any;
+
+    const isUserAdmin =
+      Boolean(user?.is_admin) ||
+      String(user?.username || '').toLowerCase() === 'admin' ||
+      String(user?.role_name || '').toLowerCase() === 'super admin';
+
+    const maintenance = getMaintenanceState();
+    if (maintenance.active && !isUserAdmin) {
+      res.status(503).json({
+        ok: false,
+        maintenance: true,
+        error: maintenance.message || 'Server is under maintenance. We will be back shortly.',
+      });
+      return;
+    }
+
     const userContext = user
       ? { id: user.id, username: user.username, fullName: user.full_name }
       : { id: 1, username: 'admin', fullName: 'Administrator' };
@@ -946,6 +1064,30 @@ async function startServer() {
       JOIN roles r ON r.id = u.role_id
       WHERE u.id = ?
     `).get(userId) as any;
+
+    const isUserAdmin =
+      Boolean(user?.is_admin) ||
+      String(user?.username || '').toLowerCase() === 'admin' ||
+      String(user?.role_name || '').toLowerCase() === 'super admin';
+
+    const maintenance = getMaintenanceState();
+    if (maintenance.active && !isUserAdmin) {
+      res.status(503).send(`
+        <!DOCTYPE html>
+        <html>
+          <body style="font-family: 'Inter', system-ui, sans-serif; padding: 4rem 2rem; text-align: center; color: #1E1B4B; background: #FFF7ED;">
+            <script>
+              try {
+                window.parent.postMessage({ type: 'BJM_MAINTENANCE_ACTIVE', message: ${JSON.stringify(maintenance.message)} }, '*');
+              } catch (e) {}
+            </script>
+            <h2 style="color: #C2410C; margin-bottom: 0.5rem;">Server Under Maintenance</h2>
+            <p style="font-weight: 600;">${maintenance.message}</p>
+          </body>
+        </html>
+      `);
+      return;
+    }
 
     const perms = getUserEffectivePermissions(user?.id || 1);
     const modPerm = perms.find((p) => p.moduleKey === moduleKey) || {
@@ -1002,6 +1144,7 @@ async function startServer() {
     ];
 
     const bridgeScript = `
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>" />
 <style>
   /* Preserve 100% Original Theme of all 16 Department Forms while hiding internal login, logout, helper text & individual report tabs */
   #page-login, #loginScreen, .login-box, .login-wrap, .login-card,
@@ -1164,6 +1307,11 @@ async function startServer() {
           .then(function(res) {
             if (!res.body || res.body.ok === false) {
               var errMsg = (res.body && res.body.error) || 'Operation not permitted';
+              if (res.body && res.body.maintenance) {
+                try {
+                  window.parent.postMessage({ type: 'BJM_MAINTENANCE_ACTIVE', message: errMsg }, '*');
+                } catch (e) {}
+              }
               showBridgeToast(errMsg, true);
               if (typeof failureHandler === 'function') {
                 failureHandler(new Error(errMsg));
@@ -1273,6 +1421,18 @@ async function startServer() {
     } catch (e) {}
   }
 
+  var _cleanScheduled = false;
+  var _isCleaning = false;
+  function scheduleClean() {
+    if (_cleanScheduled || _isCleaning) return;
+    _cleanScheduled = true;
+    setTimeout(function() {
+      _cleanScheduled = false;
+      _isCleaning = true;
+      try { cleanUnwantedHelperTexts(); } finally { _isCleaning = false; }
+    }, 60);
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       cleanUnwantedHelperTexts();
@@ -1280,8 +1440,10 @@ async function startServer() {
       setTimeout(applySsoAndPermissions, 40);
       setTimeout(applySsoAndPermissions, 250);
       try {
-        var obs = new MutationObserver(function() { cleanUnwantedHelperTexts(); });
-        obs.observe(document.body, { childList: true, subtree: true });
+        if (document.body) {
+          var obs = new MutationObserver(function() { scheduleClean(); });
+          obs.observe(document.body, { childList: true, subtree: true });
+        }
       } catch (e) {}
     });
   } else {

@@ -178,6 +178,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         shift: shiftFilter,
       });
       const res = await fetch(`/api/reports?${params.toString()}`);
+      if (!res.ok) return;
       const data = await res.json();
       if (data.ok) {
         setReportData({

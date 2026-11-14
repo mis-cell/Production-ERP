@@ -66,6 +66,13 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS system_settings (
+  setting_key TEXT PRIMARY KEY,
+  setting_value TEXT NOT NULL DEFAULT '',
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 1. CARDING DEPARTMENT TABLES
 CREATE TABLE IF NOT EXISTS carding_log_book (
   id SERIAL PRIMARY KEY,
@@ -708,6 +715,7 @@ const ORDERED_SYNC_TABLES = [
   'role_permissions',
   'user_permissions',
   'audit_logs',
+  'system_settings',
   'carding_log_book',
   'carding_machine_breakdown',
   'carding_pile_stock',
