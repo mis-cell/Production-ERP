@@ -1004,8 +1004,8 @@ async function startServer() {
     const bridgeScript = `
 <style>
   /* Preserve 100% Original Theme of all 16 Department Forms while hiding internal login, logout, helper text & individual report tabs */
-  #page-login, #loginScreen, .login-wrap, .login-card,
-  .logout-btn, #logoutBtn, button[onclick*="doLogout"], button[onclick*="logout"],
+  #page-login, #loginScreen, .login-box, .login-wrap, .login-card,
+  .btn-logout, .logout-btn, #logoutBtn, button[onclick*="doLogout"], button[onclick*="logout"],
   p.hint, p.sub, p.subtext, #rp-generated, #beam-status, #cut-status, #lb-worker-info,
   #tab-report, #page-report, #tab-reports, section#report, div#report, section#tab-report, div#tab-report,
   [data-tab="report"], [data-tab="reports"], [data-t="rep"],
@@ -1015,6 +1015,9 @@ async function startServer() {
   div.navtab[onclick*="showTab('report')"],
   #rep, #view-rep, #tab-rep {
     display: none !important;
+  }
+  #app, #appScreen {
+    display: block !important;
   }
 </style>
 <script>
@@ -1032,14 +1035,19 @@ async function startServer() {
   function hideLoginLogoutAndReportTabs() {
     try {
       var authSelectors = [
-        '#page-login', '#loginScreen', '.login-wrap', '.login-card',
-        '.logout-btn', '#logoutBtn', 'button[onclick*="doLogout"]', 'button[onclick*="logout"]'
+        '#page-login', '#loginScreen', '.login-box', '.login-wrap', '.login-card',
+        '.btn-logout', '.logout-btn', '#logoutBtn', 'button[onclick*="doLogout"]', 'button[onclick*="logout"]'
       ];
       for (var a = 0; a < authSelectors.length; a++) {
         var authEls = document.querySelectorAll(authSelectors[a]);
         for (var k = 0; k < authEls.length; k++) {
           authEls[k].style.setProperty('display', 'none', 'important');
         }
+      }
+      var appContainers = document.querySelectorAll('#app, #appScreen');
+      for (var c = 0; c < appContainers.length; c++) {
+        appContainers[c].classList.remove('hidden');
+        appContainers[c].style.setProperty('display', 'block', 'important');
       }
 
       var reportSelectors = [
@@ -1260,11 +1268,15 @@ async function startServer() {
         }
       });
     }
+    try {
+      window.doLogout = function() {};
+    } catch (e) {}
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       cleanUnwantedHelperTexts();
+      applySsoAndPermissions();
       setTimeout(applySsoAndPermissions, 40);
       setTimeout(applySsoAndPermissions, 250);
       try {
@@ -1274,6 +1286,7 @@ async function startServer() {
     });
   } else {
     cleanUnwantedHelperTexts();
+    applySsoAndPermissions();
     setTimeout(applySsoAndPermissions, 40);
     setTimeout(applySsoAndPermissions, 250);
   }
@@ -1281,7 +1294,9 @@ async function startServer() {
 </script>
 `;
 
-    const injectedHtml = rawHtml.includes('<head>')
+    const injectedHtml = rawHtml.includes('</head>')
+      ? rawHtml.replace('</head>', `${bridgeScript}</head>`)
+      : rawHtml.includes('<head>')
       ? rawHtml.replace('<head>', `<head>${bridgeScript}`)
       : `${bridgeScript}${rawHtml}`;
 
