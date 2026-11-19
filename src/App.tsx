@@ -15,6 +15,9 @@ import {
   User as UserIcon,
   AlertTriangle,
   Power,
+  Eye,
+  EyeOff,
+  ArrowRight,
 } from 'lucide-react';
 import { UserSession, EffectivePermission, ModuleMeta } from './types';
 import { AdminConsole } from './components/AdminConsole';
@@ -168,15 +171,90 @@ const ALL_MODULES: ModuleMeta[] = [
   },
 ];
 
+// Clean Botanical Jute Emblem in Rose Pink & Metallic Gold Ribbon Palette
+const JuteEmblem: React.FC<{ className?: string; variant?: 'light' | 'dark' }> = ({
+  className = 'w-16 h-16',
+  variant = 'light',
+}) => {
+  const strokeMain = variant === 'dark' ? '#F6D281' : '#C14468';
+  const leafDark = variant === 'dark' ? '#FBDDE2' : '#A83256';
+  const leafSage = variant === 'dark' ? '#F8C6D0' : '#CB798D';
+  const weaveGold = variant === 'dark' ? '#E9C16B' : '#CD9E43';
+
+  return (
+    <svg
+      viewBox="0 0 80 80"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="40" cy="40" r="35" stroke={strokeMain} strokeWidth="2.4" />
+      {/* Central jute stem */}
+      <path d="M40 54V24" stroke={leafDark} strokeWidth="2.4" strokeLinecap="round" />
+      {/* Top center leaf */}
+      <path
+        d="M40 16C45.5 21.5 46.5 29.5 40 35C33.5 29.5 34.5 21.5 40 16Z"
+        fill={leafDark}
+      />
+      {/* Left leaf */}
+      <path
+        d="M39 44C30.5 43.5 24 38.5 22 31C29.5 30.5 36.5 35.5 39 44Z"
+        fill={leafDark}
+      />
+      {/* Right leaf */}
+      <path
+        d="M41 44C49.5 43.5 56 38.5 58 31C50.5 30.5 43.5 35.5 41 44Z"
+        fill={leafDark}
+      />
+      {/* Woven fiber arcs at base */}
+      <path
+        d="M14 55C23 48.5 35 47 48 51.5C55 54 61 57.5 65 60.5"
+        stroke={leafSage}
+        strokeWidth="3.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M19 63C28.5 56.5 41.5 54.5 54.5 58.5C58.5 59.8 61.5 61.2 64 62.8"
+        stroke={weaveGold}
+        strokeWidth="3.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M28 69C38 60.5 52 54.5 67 52.5"
+        stroke={weaveGold}
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M17 59.5C27 61 36 65 44 71"
+        stroke={leafSage}
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState<UserSession | null>(null);
   const [permissions, setPermissions] = useState<EffectivePermission[]>([]);
 
   // Login Form State
-  const [loginUsername, setLoginUsername] = useState('admin');
+  const [loginUsername, setLoginUsername] = useState(() => {
+    try {
+      return localStorage.getItem('bjm_remembered_user') || 'admin';
+    } catch {
+      return 'admin';
+    }
+  });
   const [loginPassword, setLoginPassword] = useState('admin123');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [heroImgFailed, setHeroImgFailed] = useState(false);
 
   // Main Workspace View Mode: 'form' | 'report' | 'admin'
   const [viewMode, setViewMode] = useState<'form' | 'report' | 'admin'>('form');
@@ -292,6 +370,20 @@ export default function App() {
     setLoggingIn(true);
     setLoginError('');
     try {
+      if (rememberMe) {
+        try {
+          localStorage.setItem('bjm_remembered_user', usernameVal.trim());
+        } catch {
+          // ignore storage restriction
+        }
+      } else {
+        try {
+          localStorage.removeItem('bjm_remembered_user');
+        } catch {
+          // ignore
+        }
+      }
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -360,37 +452,31 @@ export default function App() {
   };
 
   const maintenanceModalNode = maintenancePopup ? (
-    <div className="fixed inset-0 z-99999 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border-2 border-[#EA580C] overflow-hidden">
-        <div
-          className="px-6 py-4 flex items-center gap-3 text-white"
-          style={{
-            background: 'linear-gradient(90deg, #9D174D 0%, #DC2626 50%, #EA580C 100%)',
-          }}
-        >
-          <div className="p-2 rounded-xl bg-white/20">
-            <AlertTriangle className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 z-99999 flex items-center justify-center bg-[#4A1426]/65 backdrop-blur-xs p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-[#F1D3DC] overflow-hidden">
+        <div className="px-6 py-4 flex items-center gap-3 text-white rose-banner">
+          <div className="p-2 rounded-xl bg-white/15">
+            <AlertTriangle className="w-6 h-6 text-[#F6D281]" />
           </div>
           <div>
-            <h3 className="text-base font-bold tracking-wide">Server Under Maintenance</h3>
-            <p className="text-[11px] text-amber-100 font-medium">
+            <h3 className="text-base font-bold tracking-wide text-white">
+              Server Under Maintenance
+            </h3>
+            <p className="text-[11px] text-[#FBDDE2] font-medium">
               System Access Temporarily Paused
             </p>
           </div>
         </div>
         <div className="p-6 text-center space-y-4">
-          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-[#1E0538] text-sm font-bold leading-relaxed">
+          <div className="p-4 rounded-xl bg-[#FDF2F5] border border-[#F8C6D0] text-[#3B1A26] text-sm font-bold leading-relaxed">
             {maintenancePopup}
           </div>
-          <p className="text-xs text-slate-600 font-medium">
+          <p className="text-xs text-[#7A4B5B] font-medium">
             Your active session has been safely logged out while system maintenance is in progress. Please try signing in again shortly.
           </p>
           <button
             onClick={() => setMaintenancePopup(null)}
-            style={{
-              background: 'linear-gradient(90deg, #3B0764 0%, #9D174D 52%, #EA580C 100%)',
-            }}
-            className="w-full py-2.5 rounded-xl text-white text-xs font-bold tracking-wide cursor-pointer shadow-md hover:opacity-95"
+            className="w-full py-2.5 rounded-xl gold-ribbon-btn text-xs font-bold tracking-wide cursor-pointer shadow-sm"
           >
             OK, Got It
           </button>
@@ -400,104 +486,290 @@ export default function App() {
   ) : null;
 
   // ==========================================================================
-  // STEP 1: YAJUR THEME LOGIN PAGE
+  // STEP 1: BJCL PRODUCTION PORTAL — ROSE PINK & GOLDEN RIBBON SPLIT LOGIN
   // ==========================================================================
   if (!user) {
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center p-4"
-        style={{
-          background: 'linear-gradient(135deg, #1E0538 0%, #3B0764 52%, #831843 100%)',
-        }}
-      >
+      <div className="h-screen min-h-[580px] w-full flex flex-row items-stretch bg-[#FBF7ED] text-[#3B1A26] overflow-hidden relative">
         {maintenanceModalNode}
-        <div className="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl border border-[#E9D5FF]">
-          {/* Top YAJUR Lotus Gradient Accent Bar */}
+
+        {/* LEFT HERO PANEL: Rose-Tinted Sunlit Jute Mill & Golden Ribbon S-Curve Wave */}
+        <div className="hidden min-[540px]:block relative w-[48%] md:w-[52%] h-full overflow-hidden shrink-0 bg-[#F8C6D0]">
+          {/* Signature Vertical Metallic Gold Ribbon Trim on Left Edge */}
           <div
-            className="h-2 w-full"
-            style={{
-              background: 'linear-gradient(90deg, #3B0764 0%, #9D174D 52%, #EA580C 100%)',
-            }}
+            aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1.5 z-20 gold-ribbon-bar pointer-events-none"
           />
 
-          <div className="p-8 text-center">
-            <div className="flex flex-col items-center justify-center mb-3">
-              <h1 className="text-xl font-bold text-[#240046] tracking-tight">
-                BALLY JUTE MILL ERP
-              </h1>
-              <p className="text-xs font-medium text-[#6B21A8]">
-                Production &amp; Operations Management System
+          {!heroImgFailed ? (
+            <>
+              <img
+                src="/assets/aistudio/Jute_Production_Login___19_Nov_2026__2.57_pm_45c1c5bc.png"
+                alt="BJCL sustainable jute fiber production floor"
+                referrerPolicy="no-referrer"
+                onError={() => setHeroImgFailed(true)}
+                style={{ width: '194%', maxWidth: 'none' }}
+                className="h-full object-cover object-left select-none pointer-events-none"
+              />
+              {/* Harmonious Pink Shades & Golden Sunlight Wash Over Hero Artwork */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(135deg, rgba(193, 68, 104, 0.28) 0%, rgba(203, 121, 141, 0.22) 38%, rgba(235, 172, 172, 0.16) 70%, rgba(205, 158, 67, 0.22) 100%)',
+                  mixBlendMode: 'multiply',
+                }}
+              />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    'linear-gradient(180deg, rgba(251, 221, 226, 0.26) 0%, rgba(248, 198, 208, 0.08) 50%, rgba(143, 43, 75, 0.20) 100%)',
+                }}
+              />
+            </>
+          ) : (
+            <div
+              className="w-full h-full flex flex-col justify-center px-10 lg:px-14 py-12"
+              style={{
+                background:
+                  'linear-gradient(145deg, #FBDDE2 0%, #F8C6D0 32%, #EBACAC 64%, #CB798D 100%)',
+              }}
+            >
+              <h2 className="text-3xl lg:text-4xl font-bold text-[#6E1D38] leading-tight max-w-md">
+                Sustainable fiber.
+                <br />
+                Stronger tomorrow.
+              </h2>
+              <div className="w-20 h-1 gold-ribbon-bar rounded-full my-5" />
+              <p className="text-sm lg:text-base text-[#5C1F34] font-medium">
+                Smart production. Responsible growth.
               </p>
             </div>
+          )}
 
-            {maintenanceActive && (
-              <div className="mt-4 p-3.5 rounded-xl bg-amber-50 border-2 border-amber-400 text-left flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-xs font-bold text-amber-900">
-                    Server Under Maintenance
-                  </div>
-                  <div className="text-[11px] font-semibold text-amber-800 mt-0.5">
-                    {maintenanceMessage}
-                  </div>
+          {/* Seamless Organic S-Curve Wave with Metallic Golden Ribbon Contour */}
+          <svg
+            viewBox="0 0 120 1000"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            className="absolute inset-y-0 right-0 h-full w-16 md:w-24 lg:w-28 pointer-events-none select-none z-10"
+          >
+            <defs>
+              <linearGradient id="goldWaveRibbon" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#CC9D42" />
+                <stop offset="30%" stopColor="#F6D281" />
+                <stop offset="55%" stopColor="#E2B760" />
+                <stop offset="80%" stopColor="#F6D281" />
+                <stop offset="100%" stopColor="#CD9E43" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M18,0 C62,100 68,215 96,325 C120,420 120,530 90,640 C66,735 58,845 30,945 C20,978 8,994 0,1000 L120,1000 L120,0 Z"
+              fill="#FBF7ED"
+            />
+            <path
+              d="M18,0 C62,100 68,215 96,325 C120,420 120,530 90,640 C66,735 58,845 30,945 C20,978 8,994 0,1000"
+              fill="none"
+              stroke="url(#goldWaveRibbon)"
+              strokeWidth="4.5"
+            />
+          </svg>
+        </div>
+
+        {/* RIGHT LOGIN PANEL: Warm Cream Canvas with Petal Pink Accents & Golden Ribbon Card */}
+        <div className="relative flex-1 h-full flex items-center justify-center px-4 sm:px-6 md:px-10 lg:px-14 py-6 bg-[#FBF7ED] overflow-y-auto">
+          {/* Decorative Subtle Rose Dot Matrix & Translucent Petal Leaf Accents */}
+          <div
+            aria-hidden="true"
+            className="hidden sm:block absolute top-8 right-10 w-32 h-24 rose-dot-pattern opacity-80 pointer-events-none"
+          />
+          <div
+            aria-hidden="true"
+            className="hidden sm:block absolute bottom-10 left-3 w-28 h-20 rose-dot-pattern opacity-80 pointer-events-none"
+          />
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 220 260"
+            fill="none"
+            className="hidden md:block absolute top-0 right-0 w-48 h-56 text-[#FBDDE2] opacity-90 pointer-events-none select-none"
+          >
+            <path
+              d="M210 10C140 30 95 95 95 170C155 155 205 105 210 10Z"
+              fill="currentColor"
+            />
+            <path
+              d="M210 10C170 72 132 122 95 170"
+              stroke="#EBACAC"
+              strokeWidth="2"
+            />
+          </svg>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 220 240"
+            fill="none"
+            className="hidden md:block absolute bottom-0 right-4 w-52 h-56 text-[#F8C6D0] opacity-75 pointer-events-none select-none"
+          >
+            <path
+              d="M195 20C125 65 92 145 108 235C172 200 212 120 195 20Z"
+              fill="currentColor"
+            />
+            <path
+              d="M195 20C158 98 130 165 108 235"
+              stroke="#EBACAC"
+              strokeWidth="2"
+            />
+          </svg>
+
+          {/* Crisp Floating White Login Card with Signature Metallic Golden Ribbon */}
+          <div className="relative z-10 w-full max-w-[440px] bg-[#FFFFFF] rounded-[22px] border border-[#F1D3DC] shadow-[0_24px_60px_-15px_rgba(193,68,104,0.16)] overflow-hidden">
+            {/* Top 5-Shade Rose Ribbon + Metallic Gold Ribbon Accent */}
+            <div className="flex h-1.5 w-full" aria-hidden="true">
+              <span className="flex-1 bg-[#C14468]" />
+              <span className="flex-1 bg-[#CB798D]" />
+              <span className="flex-1 bg-[#EBACAC]" />
+              <span className="flex-1 bg-[#F8C6D0]" />
+              <span className="flex-1 bg-[#FBDDE2]" />
+            </div>
+            <div className="h-[4px] w-full gold-ribbon-bar" aria-hidden="true" />
+
+            <div className="px-6 sm:px-8 lg:px-10 py-8 sm:py-9 lg:py-10">
+              {/* Botanical Jute Emblem & Title */}
+              <div className="flex flex-col items-center text-center">
+                <JuteEmblem className="w-[68px] h-[68px] mb-4" variant="light" />
+                <h1 className="text-[22px] sm:text-[25px] font-bold text-[#8F2B4B] tracking-tight leading-snug">
+                  BJCL Production Portal
+                </h1>
+
+                {/* Signature Metallic Gold Ribbon Hairline & Center Dot Divider */}
+                <div className="flex items-center justify-center gap-3 w-full max-w-[140px] mt-3.5 mb-1">
+                  <span className="h-[2px] flex-1 gold-ribbon-bar rounded-full" />
+                  <span className="w-2 h-2 rounded-full bg-[#CD9E43] ring-2 ring-[#F6D281]/60" />
+                  <span className="h-[2px] flex-1 gold-ribbon-bar rounded-full" />
                 </div>
               </div>
-            )}
 
-            {loginError && (
-              <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-medium text-red-700 text-left">
-                {loginError}
-              </div>
-            )}
+              {maintenanceActive && (
+                <div className="mt-4 p-3 rounded-xl bg-[#FDF2F5] border border-[#EBACAC] text-left flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-[#C14468] shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-xs font-bold text-[#8F2B4B]">
+                      Server Under Maintenance
+                    </div>
+                    <div className="text-[11px] font-medium text-[#7A4B5B] mt-0.5">
+                      {maintenanceMessage}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                performLogin(loginUsername, loginPassword);
-              }}
-              className="mt-5 space-y-4 text-left"
-            >
-              <div>
-                <label className="block text-xs font-semibold text-[#3B0764] mb-1.5">
-                  <UserIcon className="w-3.5 h-3.5 inline mr-1.5 text-[#9D174D]" />
-                  Username
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
-                  placeholder="Enter Username"
-                  className="w-full px-3.5 py-2.5 text-sm border border-[#D8B4FE] rounded-lg bg-white text-[#1E0538] focus:outline-none focus:border-[#9D174D] focus:ring-2 focus:ring-[#9D174D]/15 font-medium transition-all"
-                />
-              </div>
+              {loginError && (
+                <div className="mt-4 p-3 rounded-xl bg-[#FDF0F3] border border-[#C14468]/40 text-xs font-semibold text-[#9E2447] text-left">
+                  {loginError}
+                </div>
+              )}
 
-              <div>
-                <label className="block text-xs font-semibold text-[#3B0764] mb-1.5">
-                  <Lock className="w-3.5 h-3.5 inline mr-1.5 text-[#9D174D]" />
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Enter Password"
-                  className="w-full px-3.5 py-2.5 text-sm border border-[#D8B4FE] rounded-lg bg-white text-[#1E0538] focus:outline-none focus:border-[#9D174D] focus:ring-2 focus:ring-[#9D174D]/15 font-medium transition-all"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loggingIn}
-                style={{
-                  background: 'linear-gradient(90deg, #3B0764 0%, #9D174D 52%, #EA580C 100%)',
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  performLogin(loginUsername, loginPassword);
                 }}
-                className="w-full py-2.5 rounded-lg text-white font-semibold text-sm tracking-wide transition-all cursor-pointer shadow-md hover:opacity-95"
+                className="mt-6 space-y-4 text-left"
               >
-                {loggingIn ? 'Signing in...' : 'Sign In to Workspace'}
-              </button>
-            </form>
+                <div>
+                  <label
+                    htmlFor="bjm-login-username"
+                    className="block text-[13px] font-bold text-[#542134] mb-1.5"
+                  >
+                    Email or username
+                  </label>
+                  <div className="relative">
+                    <UserIcon className="w-4 h-4 text-[#CB798D] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="bjm-login-username"
+                      type="text"
+                      required
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      placeholder="Email or username"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-sm border border-[#F1D3DC] rounded-xl bg-[#FFFDF9] text-[#3B1A26] placeholder-[#B48A97] focus:outline-none focus:bg-white focus:border-[#C14468] focus:ring-2 focus:ring-[#E2B760]/30 font-medium transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="bjm-login-password"
+                    className="block text-[13px] font-bold text-[#542134] mb-1.5"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-[#CB798D] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="bjm-login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Password"
+                      className="w-full pl-10 pr-11 py-2.5 text-sm border border-[#F1D3DC] rounded-xl bg-[#FFFDF9] text-[#3B1A26] placeholder-[#B48A97] focus:outline-none focus:bg-white focus:border-[#C14468] focus:ring-2 focus:ring-[#E2B760]/30 font-medium transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#CB798D] hover:text-[#C14468] cursor-pointer transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <label className="inline-flex items-center gap-2.5 text-[13px] font-medium text-[#5C2B3D] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-[17px] h-[17px] rounded border-[#EBACAC] accent-[#C14468] cursor-pointer"
+                    />
+                    Remember me
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loggingIn}
+                  className="relative w-full py-3 px-4 rounded-xl gold-ribbon-btn text-white font-semibold text-sm tracking-wide cursor-pointer flex items-center justify-center disabled:opacity-60 mt-2"
+                >
+                  <span>{loggingIn ? 'Signing in...' : 'Sign in'}</span>
+                  <ArrowRight className="w-4 h-4 absolute right-4" />
+                </button>
+              </form>
+
+              {/* Footer Forgot Password Link */}
+              <div className="mt-5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotHelp((prev) => !prev)}
+                  className="inline-flex items-center gap-2.5 text-xs font-semibold text-[#A84364] hover:text-[#8F2B4B] cursor-pointer transition-colors"
+                >
+                  <span className="w-7 h-7 rounded-full bg-[#FDF2F5] border border-[#F8C6D0] flex items-center justify-center text-[#C14468]">
+                    <Lock className="w-3.5 h-3.5" />
+                  </span>
+                  Forgot password?
+                </button>
+
+                {showForgotHelp && (
+                  <div className="mt-3 p-3 rounded-xl bg-[#FDF2F5] border border-[#F8C6D0] text-xs text-[#6B2D42] leading-relaxed">
+                    Password resets are managed by the BJCL ERP Administrator in the Admin Panel. Please contact your Shift Supervisor or System Admin.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -505,7 +777,7 @@ export default function App() {
   }
 
   // ==========================================================================
-  // STEP 2: MAIN APP — YAJUR DEEP ROYAL PURPLE SIDEBAR (MATCHING SCREENSHOT 1)
+  // STEP 2: MAIN APP — BOTANICAL FOREST GREEN & GOLDEN JUTE THEME
   // ==========================================================================
   const accessibleModules = ALL_MODULES.filter((m) => {
     const p = permissions.find((perm) => perm.moduleKey === m.key);
@@ -523,18 +795,19 @@ export default function App() {
   );
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[#FAF7FD] text-[#1E0538]">
-      {/* LEFT SIDEBAR: Deep Royal Purple + YAJUR Crimson/Orange Active Pill */}
+    <div className="h-screen w-screen overflow-hidden flex bg-[#FBF7ED] text-[#3B1A26]">
+      {/* LEFT SIDEBAR: Deep Rose Pink Shades + Metallic Golden Ribbon Accent */}
       {!fullScreenModule && (
         <aside
           className={`${
             sidebarCollapsed ? 'w-16' : 'w-68'
-          } yajur-sidebar flex flex-col transition-all duration-150 shrink-0`}
+          } rose-sidebar flex flex-col transition-all duration-150 shrink-0`}
         >
           {/* Top Brand Header */}
-          <div className="h-14 px-3.5 border-b border-[#3B0764] flex items-center justify-between">
+          <div className="h-14 px-3.5 border-b border-[#E2B760]/35 flex items-center justify-between">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-2.5 overflow-hidden">
+                <JuteEmblem className="w-7 h-7 shrink-0" variant="dark" />
                 <div className="truncate">
                   <div className="font-bold text-sm text-white tracking-wide truncate">
                     BALLY JUTE MILL
@@ -544,7 +817,7 @@ export default function App() {
             )}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1.5 rounded-lg text-purple-200 hover:text-white hover:bg-[#3B0764] cursor-pointer"
+              className="p-1.5 rounded-lg text-[#FBDDE2] hover:text-white hover:bg-white/15 cursor-pointer"
               title="Collapse / Expand Sidebar"
             >
               <Menu className="w-4 h-4" />
@@ -553,7 +826,7 @@ export default function App() {
 
           {/* Primary Mode Switchers at Top of Sidebar */}
           {!sidebarCollapsed && (
-            <div className="p-3 border-b border-[#3B0764] space-y-2">
+            <div className="p-3 border-b border-[#E2B760]/30 space-y-2">
               <button
                 onClick={() => {
                   setReportDeptFilter('all');
@@ -561,15 +834,23 @@ export default function App() {
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer ${
                   viewMode === 'report'
-                    ? 'yajur-active-pill text-white'
-                    : 'bg-[#3B0764]/75 hover:bg-[#4C1D95] text-[#FBBF24] border border-[#581C87]'
+                    ? 'rose-active-pill'
+                    : 'bg-white/10 hover:bg-white/18 text-[#FDECEF] border border-[#F8C6D0]/25'
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <BarChart3 className="w-3.5 h-3.5 text-[#FBBF24]" />
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <BarChart3
+                    className={`w-3.5 h-3.5 ${
+                      viewMode === 'report' ? 'text-[#5C1A31]' : 'text-[#F6D281]'
+                    }`}
+                  />
                   REPORT SECTION (ALL)
                 </span>
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#1A0033] text-[#FDE68A]">
+                <span
+                  className={`text-[10px] font-mono font-bold ${
+                    viewMode === 'report' ? 'text-[#5C1A31]' : 'text-[#F6D281]'
+                  }`}
+                >
                   16 Depts
                 </span>
               </button>
@@ -581,15 +862,23 @@ export default function App() {
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer ${
                   viewMode === 'admin'
-                    ? 'yajur-active-pill text-white'
-                    : 'bg-[#3B0764]/75 hover:bg-[#4C1D95] text-purple-100 border border-[#581C87]'
+                    ? 'rose-active-pill'
+                    : 'bg-white/10 hover:bg-white/18 text-[#FDECEF] border border-[#F8C6D0]/25'
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-purple-200" />
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <Shield
+                    className={`w-3.5 h-3.5 ${
+                      viewMode === 'admin' ? 'text-[#5C1A31]' : 'text-[#F8C6D0]'
+                    }`}
+                  />
                   ADMIN PANEL &amp; USERS
                 </span>
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-[#1A0033] text-[#FBBF24]">
+                <span
+                  className={`text-[10px] font-mono font-bold ${
+                    viewMode === 'admin' ? 'text-[#5C1A31]' : 'text-[#F6D281]'
+                  }`}
+                >
                   DB
                 </span>
               </button>
@@ -599,17 +888,17 @@ export default function App() {
           {/* Search Input for the 16 Forms */}
           {!sidebarCollapsed && (
             <div className="px-3 pt-3 pb-1.5">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-purple-200 mb-1.5 flex items-center justify-between">
-                <span>ALL DEPARTMENT FORMS ({accessibleModules.length})</span>
+              <div className="text-[11px] font-semibold tracking-wide text-[#FBDDE2] mb-1.5 flex items-center justify-between">
+                <span>Department Forms ({accessibleModules.length})</span>
               </div>
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-purple-300 absolute left-2.5 top-2" />
+                <Search className="w-3.5 h-3.5 text-[#F8C6D0] absolute left-2.5 top-2" />
                 <input
                   type="text"
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
                   placeholder="Filter forms 1 to 16..."
-                  className="w-full pl-8 pr-2.5 py-1.5 bg-[#1A0033]/80 border border-[#581C87] rounded-lg text-xs font-medium text-white placeholder-purple-300/70 focus:outline-none focus:border-[#EA580C]"
+                  className="w-full pl-8 pr-2.5 py-1.5 bg-[#6E1B37]/80 border border-[#F8C6D0]/30 rounded-lg text-xs font-medium text-white placeholder-[#F8C6D0]/75 focus:outline-none focus:border-[#F6D281]"
                 />
               </div>
             </div>
@@ -625,8 +914,8 @@ export default function App() {
                   key={mod.key}
                   className={`group flex items-center justify-between rounded-xl transition-all ${
                     isCurrentForm
-                      ? 'yajur-active-pill font-semibold'
-                      : 'hover:bg-[#3B0764]/70 text-purple-100 hover:text-white font-medium'
+                      ? 'rose-active-pill font-bold'
+                      : 'hover:bg-white/12 text-[#FDECEF] hover:text-white font-medium'
                   }`}
                 >
                   <button
@@ -639,7 +928,7 @@ export default function App() {
                   >
                     <FileText
                       className={`w-3.5 h-3.5 shrink-0 ${
-                        isCurrentForm ? 'text-[#FDE68A]' : 'text-purple-300 group-hover:text-white'
+                        isCurrentForm ? 'text-[#5C1A31]' : 'text-[#F8C6D0] group-hover:text-[#F6D281]'
                       }`}
                     />
                     {!sidebarCollapsed && <span className="truncate">{mod.shortName}</span>}
@@ -650,8 +939,8 @@ export default function App() {
 
             {/* Quick Admin Sub-links at Bottom of Scroll */}
             {!sidebarCollapsed && (
-              <div className="pt-3 mt-3 border-t border-[#3B0764] space-y-1">
-                <div className="px-2 text-[10px] font-bold uppercase tracking-wider text-purple-300/80">
+              <div className="pt-3 mt-3 border-t border-[#E2B760]/30 space-y-1">
+                <div className="px-2 text-[11px] font-semibold text-[#F6D281]">
                   Admin Shortcuts
                 </div>
                 <button
@@ -659,9 +948,9 @@ export default function App() {
                     setAdminTab('users');
                     setViewMode('admin');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-200 hover:text-white hover:bg-[#3B0764]/70 cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[#FBDDE2] hover:text-white hover:bg-white/12 cursor-pointer"
                 >
-                  <Users className="w-3.5 h-3.5 text-purple-300" />
+                  <Users className="w-3.5 h-3.5 text-[#F6D281]" />
                   <span>Users &amp; Permissions</span>
                 </button>
                 <button
@@ -670,21 +959,21 @@ export default function App() {
                     setAdminTab('database');
                     setViewMode('admin');
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-200 hover:text-white hover:bg-[#3B0764]/70 cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-[#FBDDE2] hover:text-white hover:bg-white/12 cursor-pointer"
                 >
-                  <Database className="w-3.5 h-3.5 text-purple-300" />
+                  <Database className="w-3.5 h-3.5 text-[#F6D281]" />
                   <span>&ldquo;production&rdquo; DB Tables</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Logged-In User Footer (Matching Screenshot 1) */}
-          <div className="p-3 border-t border-[#3B0764] bg-[#1A0033] flex items-center justify-between gap-2">
+          {/* Logged-In User Footer */}
+          <div className="p-3 border-t border-[#E2B760]/35 bg-[#6A1B35] flex items-center justify-between gap-2">
             {!sidebarCollapsed && (
               <div className="truncate">
                 <div className="text-xs font-bold text-white truncate">{user.fullName}</div>
-                <div className="text-[11px] text-[#FBBF24] font-mono truncate">
+                <div className="text-[11px] text-[#F6D281] font-mono truncate">
                   @{user.username} · {user.roleName}
                 </div>
               </div>
@@ -692,9 +981,9 @@ export default function App() {
             <button
               onClick={handleLogout}
               title="Logout"
-              className="px-3 py-1.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-xs"
+              className="px-3 py-1.5 rounded-lg bg-[#C14468] hover:bg-[#A63556] border border-[#F6D281]/50 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-xs whitespace-nowrap"
             >
-              <LogOut className="w-3.5 h-3.5 text-white" />
+              <LogOut className="w-3.5 h-3.5 text-[#F6D281]" />
               {!sidebarCollapsed && <span>Logout</span>}
             </button>
           </div>
@@ -703,17 +992,20 @@ export default function App() {
 
       {/* RIGHT MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Bar Matching Screenshot 1 & Screenshot 2 */}
-        <header className="h-14 bg-white border-b border-[#E9D5FF] px-4 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="px-2.5 py-1 rounded-md bg-[#F3E8FF] border border-[#E9D5FF] text-[#4C1D95] font-bold text-xs">
+        {/* Crisp White Header Bar with Signature Metallic Golden Ribbon Underside */}
+        <header className="relative h-14 bg-white px-4 flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="text-xs font-bold text-[#C14468] whitespace-nowrap shrink-0">
               {viewMode === 'form'
                 ? activeModuleMeta.shortName
                 : viewMode === 'report'
-                ? 'REPORT SECTION'
-                : 'ADMIN PANEL'}
+                ? 'Report Section'
+                : 'Admin Panel'}
             </span>
-            <h2 className="text-sm font-bold text-[#240046] truncate">
+            <span className="text-[#EBACAC]" aria-hidden="true">
+              /
+            </span>
+            <h2 className="text-sm font-bold text-[#3B1A26] truncate">
               {viewMode === 'form'
                 ? activeModuleMeta.name
                 : viewMode === 'report'
@@ -722,14 +1014,14 @@ export default function App() {
             </h2>
           </div>
 
-          {/* Top Bar Action Buttons Matching Screenshot 1 & Screenshot 2 */}
-          <div className="flex items-center gap-2">
+          {/* Top Bar Action Controls */}
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setViewMode('form')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all whitespace-nowrap shrink-0 ${
                 viewMode === 'form'
-                  ? 'bg-[#3B0764] text-white shadow-xs'
-                  : 'bg-white border border-[#E9D5FF] text-[#3B0764] hover:bg-[#FAF5FF]'
+                  ? 'bg-[#C14468] text-white shadow-xs'
+                  : 'bg-white border border-[#F1D3DC] text-[#8F2B4B] hover:bg-[#FDF2F5]'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
@@ -741,10 +1033,10 @@ export default function App() {
                 setReportDeptFilter(viewMode === 'form' ? activeModuleMeta.key : 'all');
                 setViewMode('report');
               }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all whitespace-nowrap shrink-0 ${
                 viewMode === 'report'
-                  ? 'bg-[#3B0764] text-white shadow-xs'
-                  : 'bg-[#FFFBEB] border border-[#FCD34D] text-[#B45309] hover:bg-[#FEF3C7]'
+                  ? 'bg-[#C14468] text-white shadow-xs'
+                  : 'bg-[#FDF6E7] border border-[#E2B760] text-[#9A6F1E] hover:bg-[#FAF0D6]'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
@@ -756,10 +1048,10 @@ export default function App() {
                 setAdminTab('users');
                 setViewMode('admin');
               }}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all whitespace-nowrap shrink-0 ${
                 viewMode === 'admin'
-                  ? 'bg-[#3B0764] text-white shadow-xs'
-                  : 'bg-white border border-[#E9D5FF] text-[#3B0764] hover:bg-[#FAF5FF]'
+                  ? 'bg-[#C14468] text-white shadow-xs'
+                  : 'bg-white border border-[#F1D3DC] text-[#8F2B4B] hover:bg-[#FDF2F5]'
               }`}
             >
               <Shield className="w-3.5 h-3.5" />
@@ -774,10 +1066,10 @@ export default function App() {
                     ? 'Click to Turn OFF Maintenance Mode'
                     : 'Click to Turn ON Maintenance Mode (logs out all non-admin users)'
                 }
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all whitespace-nowrap shrink-0 ${
                   maintenanceActive
-                    ? 'bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-xs animate-pulse'
-                    : 'bg-amber-50 border border-amber-300 text-amber-900 hover:bg-amber-100'
+                    ? 'bg-[#B8294B] hover:bg-[#991F3C] text-white shadow-xs'
+                    : 'bg-[#FDF2F5] border border-[#F8C6D0] text-[#8F2B4B] hover:bg-[#FBDDE2]'
                 }`}
               >
                 <Power className="w-3.5 h-3.5" />
@@ -789,14 +1081,14 @@ export default function App() {
               <>
                 <button
                   onClick={() => setIframeRefreshKey((k) => k + 1)}
-                  className="p-1.5 rounded-lg bg-white border border-[#E9D5FF] hover:bg-[#FAF5FF] text-[#4C1D95] cursor-pointer"
+                  className="p-1.5 rounded-lg bg-white border border-[#F1D3DC] hover:bg-[#FDF2F5] text-[#C14468] cursor-pointer shrink-0"
                   title="Reload Form"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setFullScreenModule(!fullScreenModule)}
-                  className="p-1.5 rounded-lg bg-white border border-[#E9D5FF] hover:bg-[#FAF5FF] text-[#4C1D95] cursor-pointer"
+                  className="p-1.5 rounded-lg bg-white border border-[#F1D3DC] hover:bg-[#FDF2F5] text-[#C14468] cursor-pointer shrink-0"
                   title="Full Screen Toggle"
                 >
                   {fullScreenModule ? (
@@ -808,18 +1100,24 @@ export default function App() {
               </>
             )}
           </div>
+
+          {/* Signature Metallic Golden Ribbon Strip Beneath Top Bar */}
+          <div
+            aria-hidden="true"
+            className="absolute bottom-0 inset-x-0 h-[3px] gold-ribbon-bar pointer-events-none"
+          />
         </header>
 
         {/* Active Maintenance Banner for Admin */}
         {maintenanceActive && isCurrentUserAdmin && (
-          <div className="bg-[#DC2626] text-white px-4 py-1.5 text-xs font-bold flex items-center justify-between">
+          <div className="bg-[#9E2447] text-white px-4 py-1.5 text-xs font-bold flex items-center justify-between border-b border-[#E2B760]">
             <span className="flex items-center gap-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-200" />
+              <AlertTriangle className="w-3.5 h-3.5 text-[#F6D281]" />
               MAINTENANCE MODE IS ACTIVE: All non-admin users are logged out and blocked ({maintenanceMessage})
             </span>
             <button
               onClick={() => handleToggleMaintenance(false)}
-              className="px-2.5 py-0.5 rounded bg-white text-[#DC2626] text-[11px] font-bold hover:bg-red-50 cursor-pointer"
+              className="px-2.5 py-0.5 rounded bg-white text-[#9E2447] text-[11px] font-bold hover:bg-[#FDF2F5] cursor-pointer whitespace-nowrap"
             >
               Turn OFF Now
             </button>
@@ -852,7 +1150,7 @@ export default function App() {
             }}
           />
         ) : (
-          <div className="flex-1 w-full h-full bg-[#FAF7FD] relative">
+          <div className="flex-1 w-full h-full bg-[#FBF7ED] relative">
             <iframe
               key={`${activeModuleMeta.key}-${user.id}-${iframeRefreshKey}`}
               src={`/api/modules/${activeModuleMeta.key}/render?userId=${user.id}`}

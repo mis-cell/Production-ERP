@@ -738,10 +738,10 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
     REPORT_TYPE_TABS.find((t) => t.key === reportType) || REPORT_TYPE_TABS[0];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#FAF7FD] p-5 text-[#1E0538]">
+    <div className="flex-1 overflow-y-auto bg-[#FBF7ED] p-5 text-[#3B1A26]">
       <div className="max-w-[1480px] mx-auto space-y-5">
-        {/* Top YAJUR Banner */}
-        <div className="rounded-2xl yajur-banner p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* Top Rose Pink & Golden Ribbon Banner */}
+        <div className="rounded-2xl rose-banner p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-lg font-bold tracking-tight text-white">
               Central Production, Table &amp; Field Report Center (All 16 Departments)
@@ -751,21 +751,21 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={loadReports}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-semibold cursor-pointer transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#FDE68A] ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-[#F6D281] ${loading ? 'animate-spin' : ''}`} />
               Refresh Live Data
             </button>
             <button
               onClick={handleExportCsv}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] border border-white/25 text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg gold-ribbon-btn text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors whitespace-nowrap"
             >
-              <FileSpreadsheet className="w-4 h-4 text-[#FDE68A]" />
+              <FileSpreadsheet className="w-4 h-4 text-white" />
               Export Current Report (CSV / Excel)
             </button>
             <button
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/15 border border-white/25 text-white hover:bg-white/25 text-xs font-semibold cursor-pointer transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/15 border border-white/25 text-white hover:bg-white/25 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap"
             >
               <Printer className="w-4 h-4 text-white" />
               Print / PDF
@@ -774,9 +774,9 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         </div>
 
         {/* 10 Report Type Selector Tabs */}
-        <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs p-3.5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-[#6B21A8] mb-2.5 px-1">
-            Select Report Type (10 Complete Report Views Available):
+        <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs p-3.5">
+          <div className="text-xs font-semibold text-[#7A4B5B] mb-2.5 px-1">
+            Select Report Type (10 Complete Report Views Available)
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {REPORT_TYPE_TABS.map((tab) => {
@@ -788,11 +788,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                   onClick={() => setReportType(tab.key)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'yajur-active-tab text-white'
-                      : 'bg-[#FAF5FF] hover:bg-[#F3E8FF] text-[#240046] border border-[#E9D5FF]'
+                      ? 'rose-active-tab text-white'
+                      : 'bg-[#FDF2F5] hover:bg-[#FBDDE2] text-[#3B1A26] border border-[#F1D3DC]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FDE68A]' : 'text-[#9D174D]'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#F6D281]' : 'text-[#C14468]'}`} />
                   <span className="truncate">{tab.shortLabel}</span>
                 </button>
               );
@@ -801,11 +801,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         </div>
 
         {/* Comprehensive Multi-Dimension Filter Bar */}
-        <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs p-4 space-y-3">
+        <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
-                <Filter className="w-3.5 h-3.5 inline mr-1 text-[#9D174D]" />
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
+                <Filter className="w-3.5 h-3.5 inline mr-1 text-[#CD9E43]" />
                 1. Department (1–16)
               </label>
               <select
@@ -814,7 +814,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                   setSelectedDept(e.target.value);
                   setSelectedTable('all');
                 }}
-                className="w-full px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                className="w-full px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
               >
                 <option value="all">All 16 Departments (Master Combined)</option>
                 {reportData.reportableModules.map((m, idx) => (
@@ -826,14 +826,14 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
-                <TableIcon className="w-3.5 h-3.5 inline mr-1 text-[#9D174D]" />
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
+                <TableIcon className="w-3.5 h-3.5 inline mr-1 text-[#CD9E43]" />
                 2. Database Table ({availableTables.length} Tables)
               </label>
               <select
                 value={selectedTable}
                 onChange={(e) => setSelectedTable(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                className="w-full px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
               >
                 <option value="all">All Tables ({availableTables.length})</option>
                 {availableTables.map((t) => (
@@ -845,21 +845,21 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
-                <Calendar className="w-3.5 h-3.5 inline mr-1 text-[#9D174D]" />
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
+                <Calendar className="w-3.5 h-3.5 inline mr-1 text-[#CD9E43]" />
                 3. From Date
               </label>
               <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                className="w-full px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
-                <Calendar className="w-3.5 h-3.5 inline mr-1 text-[#9D174D]" />
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
+                <Calendar className="w-3.5 h-3.5 inline mr-1 text-[#CD9E43]" />
                 4. To Date
               </label>
               <div className="flex gap-1.5">
@@ -867,7 +867,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                  className="flex-1 px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
                 />
                 {(fromDate || toDate) && (
                   <button
@@ -876,7 +876,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                       setFromDate('');
                       setToDate('');
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-[#FAF5FF] border border-[#D8B4FE] text-[11px] font-bold text-[#3B0764] hover:bg-[#F3E8FF] cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-[#FDF2F5] border border-[#ECC5D0] text-[11px] font-bold text-[#8F2B4B] hover:bg-[#FBDDE2] cursor-pointer"
                   >
                     Clear
                   </button>
@@ -887,13 +887,13 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
                 5. Shift (A / B / C)
               </label>
               <select
                 value={shiftFilter}
                 onChange={(e) => setShiftFilter(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                className="w-full px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
               >
                 <option value="all">All Shifts (A + B + C)</option>
                 <option value="a">Shift A Only</option>
@@ -903,13 +903,13 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
                 6. Machine / Loom / Frame
               </label>
               <select
                 value={machineFilter}
                 onChange={(e) => setMachineFilter(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                className="w-full px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
               >
                 <option value="all">All Machines / Looms ({distinctMachines.length})</option>
                 {distinctMachines.map((m) => (
@@ -921,13 +921,13 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
                 7. Quality / Count / Color
               </label>
               <select
                 value={qualityFilter}
                 onChange={(e) => setQualityFilter(e.target.value)}
-                className="w-full px-3 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                className="w-full px-3 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
               >
                 <option value="all">All Qualities / Specs ({distinctQualities.length})</option>
                 {distinctQualities.map((q) => (
@@ -939,17 +939,17 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#3B0764] mb-1">
+              <label className="block text-xs font-bold text-[#8F2B4B] mb-1">
                 8. Search Any Field / Operator / Bale / Beam
               </label>
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-[#9333EA] absolute left-2.5 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-[#CB798D] absolute left-2.5 top-2.5" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search any value across fields..."
-                  className="w-full pl-8 pr-2.5 py-2 text-xs font-semibold border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                  className="w-full pl-8 pr-2.5 py-2 text-xs font-semibold border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
                 />
               </div>
             </div>
@@ -969,8 +969,8 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                 }}
                 className={`p-2.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-[#FAF5FF] text-[#240046] border-[#9D174D] shadow-xs'
-                    : 'bg-white hover:bg-[#FAF5FF] border-[#E9D5FF] text-[#240046]'
+                    ? 'bg-[#FBDDE2] text-[#3B1A26] border-[#CD9E43] shadow-xs'
+                    : 'bg-white hover:bg-[#FDF2F5] border-[#F1D3DC] text-[#3B1A26]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1">
@@ -982,16 +982,16 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                       onOpenDepartmentForm(dept.moduleKey);
                     }}
                     title={`Open ${dept.shortName} Form`}
-                    className="p-1 rounded bg-[#F3E8FF] hover:bg-[#E9D5FF] text-[#3B0764]"
+                    className="p-1 rounded bg-[#FDF2F5] hover:bg-[#F8C6D0] text-[#C14468]"
                   >
                     <ArrowUpRight className="w-3 h-3" />
                   </button>
                 </div>
-                <div className="mt-1.5 pt-1.5 border-t border-[#F3E8FF] flex items-baseline justify-between">
-                  <span className="text-xs font-bold font-mono tabular-nums text-[#9D174D]">
+                <div className="mt-1.5 pt-1.5 border-t border-[#F8E2E8] flex items-baseline justify-between">
+                  <span className="text-xs font-bold font-mono tabular-nums text-[#A87B24]">
                     {dept.totalPrimary} {dept.primaryUnit}
                   </span>
-                  <span className="text-[10px] font-semibold text-[#6B21A8]">
+                  <span className="text-[10px] font-semibold text-[#7A4B5B] tabular-nums">
                     {dept.recordCount} rec
                   </span>
                 </div>
@@ -1001,29 +1001,29 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         </div>
 
         {/* Active Report Header Bar */}
-        <div className="px-4 py-3 rounded-2xl bg-white border border-[#E9D5FF] shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="px-4 py-3 rounded-2xl bg-white border border-[#F1D3DC] shadow-xs flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-bold text-[#240046]">{activeReportMeta.fullTitle}</h2>
-            <div className="text-xs text-[#6B21A8] mt-0.5">
+            <h2 className="text-sm font-bold text-[#3B1A26]">{activeReportMeta.fullTitle}</h2>
+            <div className="text-xs text-[#7A4B5B] mt-0.5">
               Department:{' '}
-              <strong className="font-bold text-[#240046]">
+              <strong className="font-bold text-[#8F2B4B]">
                 {selectedDept === 'all'
                   ? 'All 16 Departments'
                   : reportData.departmentSummaries.find((d) => d.moduleKey === selectedDept)?.name ||
                     selectedDept}
               </strong>{' '}
               · Table:{' '}
-              <strong className="font-bold text-[#240046]">
+              <strong className="font-bold text-[#8F2B4B]">
                 {selectedTable === 'all' ? 'All Tables' : selectedTable}
               </strong>{' '}
-              · Shift: <strong className="font-bold text-[#240046]">{shiftFilter.toUpperCase()}</strong>
+              · Shift: <strong className="font-bold text-[#8F2B4B]">{shiftFilter.toUpperCase()}</strong>
             </div>
           </div>
 
           {selectedDept !== 'all' && (
             <button
               onClick={() => onOpenDepartmentForm(selectedDept)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white text-xs font-semibold cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#C14468] hover:bg-[#A63556] text-white text-xs font-semibold cursor-pointer shadow-xs whitespace-nowrap"
             >
               Open {selectedDept.toUpperCase()} Entry Form
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1068,33 +1068,34 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
               }
 
               return (
-                <div key={tbl.tableName} className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
-                  <div className="px-4 py-3 bg-[#FAF5FF] border-b border-[#E9D5FF] text-[#240046] flex flex-wrap items-center justify-between gap-2">
+                <div key={tbl.tableName} className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
+                  <div className="px-4 py-3 bg-[#FDF2F5] border-b border-[#F1D3DC] text-[#3B1A26] flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <TableIcon className="w-4 h-4 text-[#9D174D]" />
-                      <span className="font-mono text-xs font-bold text-[#240046]">
+                      <TableIcon className="w-4 h-4 text-[#CD9E43]" />
+                      <span className="font-mono text-xs font-bold text-[#3B1A26]">
                         {tbl.moduleName} &rarr;{' '}
-                        <span className="text-[#9D174D] font-bold">production.{tbl.tableName}</span>
+                        <span className="text-[#A87B24] font-bold">production.{tbl.tableName}</span>
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-xs font-mono text-[#6B21A8]">
-                      <span>{cols.length} Fields / Columns</span>
-                      <span className="px-2 py-0.5 rounded bg-[#F3E8FF] border border-[#D8B4FE] text-[#3B0764] font-bold">
+                    <div className="flex items-center gap-3 text-xs font-mono text-[#7A4B5B] tabular-nums">
+                      <span>{cols.length} Fields</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-bold text-[#8F2B4B]">
                         {tbl.rows.length} Record(s)
                       </span>
                     </div>
                   </div>
 
                   {tbl.rows.length === 0 ? (
-                    <div className="p-4 text-xs text-[#6B21A8] bg-white">
-                      No records currently stored in <code className="font-mono font-bold text-[#240046]">{tbl.tableName}</code>{' '}
+                    <div className="p-4 text-xs text-[#7A4B5B] bg-white">
+                      No records currently stored in <code className="font-mono font-bold text-[#3B1A26]">{tbl.tableName}</code>{' '}
                       for the selected filters.
                     </div>
                   ) : (
                     <div className="overflow-x-auto bg-white">
-                      <table className="w-full text-left border-collapse text-xs font-mono">
+                      <table className="w-full text-left border-collapse text-xs font-mono tabular-nums">
                         <thead>
-                          <tr className="bg-[#3B0764] text-white font-bold">
+                          <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold">
                             {cols.map((c) => (
                               <th key={c.name} className="py-2.5 px-3 whitespace-nowrap">
                                 {c.name}
@@ -1102,9 +1103,9 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                        <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                           {tbl.rows.map((row, idx) => (
-                            <tr key={idx} className="hover:bg-[#FAF5FF]">
+                            <tr key={idx} className="hover:bg-[#FDF2F5]">
                               {cols.map((c) => (
                                 <td key={c.name} className="py-2 px-3 whitespace-nowrap">
                                   {String(row[c.name] ?? '')}
@@ -1115,7 +1116,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                         </tbody>
                         {Object.keys(numericTotals).length > 0 && (
                           <tfoot>
-                            <tr className="bg-[#FAF5FF] border-t-2 border-[#D8B4FE] font-bold text-[#240046]">
+                            <tr className="bg-[#FDF2F5] border-t-2 border-[#ECC5D0] font-bold text-[#3B1A26]">
                               {cols.map((c, idx) => (
                                 <td key={c.name} className="py-2.5 px-3 whitespace-nowrap">
                                   {idx === 0
@@ -1141,11 +1142,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 2: DATE & SHIFT-WISE (SHIFT A / B / C) PRODUCTION MATRIX     */}
         {/* =================================================================== */}
         {reportType === 'daily_shift_matrix' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Date</th>
                     <th className="py-3 px-4">Department</th>
                     <th className="py-3 px-4 text-right">Shift A Output</th>
@@ -1158,18 +1159,18 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-4 text-center">Records</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {dailyShiftMatrix.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-10 text-center text-[#6B21A8]">
+                      <td colSpan={10} className="py-10 text-center text-[#7A4B5B]">
                         No shift production records found for the selected filters.
                       </td>
                     </tr>
                   ) : (
                     dailyShiftMatrix.map((row) => (
-                      <tr key={row.key} className="hover:bg-[#FAF5FF]">
-                        <td className="py-2.5 px-4 font-mono font-bold text-[#240046]">{row.date}</td>
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">{row.department}</td>
+                      <tr key={row.key} className="hover:bg-[#FDF2F5]">
+                        <td className="py-2.5 px-4 font-mono font-bold text-[#3B1A26] tabular-nums">{row.date}</td>
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{row.department}</td>
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                           {row.shiftAPrimary.toFixed(2)}
                         </td>
@@ -1179,7 +1180,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                           {row.shiftCPrimary.toFixed(2)}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#9D174D] tabular-nums">
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#A87B24] tabular-nums">
                           {row.totalPrimary.toFixed(2)} {row.primaryLabel}
                         </td>
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
@@ -1188,8 +1189,8 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                           {row.breakdownMins.toFixed(0)} mins
                         </td>
-                        <td className="py-2.5 px-4 text-center font-mono">{row.machines.size}</td>
-                        <td className="py-2.5 px-4 text-center font-mono">{row.recordCount}</td>
+                        <td className="py-2.5 px-4 text-center font-mono tabular-nums">{row.machines.size}</td>
+                        <td className="py-2.5 px-4 text-center font-mono tabular-nums">{row.recordCount}</td>
                       </tr>
                     ))
                   )}
@@ -1203,11 +1204,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 3: DEPARTMENT-WISE EXECUTIVE SUMMARY (ALL 16 DEPARTMENTS)    */}
         {/* =================================================================== */}
         {reportType === 'dept_executive' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Department (1–16)</th>
                     <th className="py-3 px-3">Category</th>
                     <th className="py-3 px-3">SQL Tables</th>
@@ -1221,32 +1222,32 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-3 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {reportData.departmentSummaries.map((d) => (
-                    <tr key={d.moduleKey} className="hover:bg-[#FAF5FF]">
-                      <td className="py-2.5 px-4 font-bold text-[#240046]">{d.shortName}</td>
-                      <td className="py-2.5 px-3 text-[#6B21A8]">{d.category}</td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-[#6B21A8]">{d.tables.join(', ')}</td>
-                      <td className="py-2.5 px-3 text-center font-mono">{d.shiftACount}</td>
-                      <td className="py-2.5 px-3 text-center font-mono">{d.shiftBCount}</td>
-                      <td className="py-2.5 px-3 text-center font-mono">{d.shiftCCount}</td>
-                      <td className="py-2.5 px-3 text-center font-mono font-bold text-[#240046]">
+                    <tr key={d.moduleKey} className="hover:bg-[#FDF2F5]">
+                      <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{d.shortName}</td>
+                      <td className="py-2.5 px-3 text-[#7A4B5B]">{d.category}</td>
+                      <td className="py-2.5 px-3 font-mono text-[11px] text-[#7A4B5B]">{d.tables.join(', ')}</td>
+                      <td className="py-2.5 px-3 text-center font-mono tabular-nums">{d.shiftACount}</td>
+                      <td className="py-2.5 px-3 text-center font-mono tabular-nums">{d.shiftBCount}</td>
+                      <td className="py-2.5 px-3 text-center font-mono tabular-nums">{d.shiftCCount}</td>
+                      <td className="py-2.5 px-3 text-center font-mono font-bold text-[#3B1A26] tabular-nums">
                         {d.recordCount}
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-bold text-[#9D174D]">
+                      <td className="py-2.5 px-4 text-right font-mono font-bold text-[#A87B24] tabular-nums">
                         {d.totalPrimary} {d.primaryUnit}
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono">
+                      <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                         {d.totalSecondary} {d.secondaryUnit}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">{d.breakdownMins} m</td>
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums">{d.breakdownMins} m</td>
                       <td className="py-2.5 px-3 text-center">
                         <button
                           onClick={() => {
                             setSelectedDept(d.moduleKey);
                             setReportType('table_field_explorer');
                           }}
-                          className="px-2.5 py-1 rounded bg-[#F3E8FF] hover:bg-[#E9D5FF] text-[#3B0764] border border-[#D8B4FE] font-bold text-[11px] cursor-pointer"
+                          className="px-2.5 py-1 rounded bg-[#FBDDE2] hover:bg-[#F8C6D0] text-[#8F2B4B] border border-[#ECC5D0] font-bold text-[11px] cursor-pointer whitespace-nowrap"
                         >
                           View Tables
                         </button>
@@ -1263,11 +1264,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 4: MACHINE / LOOM / FRAME / PRESS WISE PERFORMANCE REPORT    */}
         {/* =================================================================== */}
         {reportType === 'machine_loom_wise' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Department</th>
                     <th className="py-3 px-4">Machine / Loom / Frame No</th>
                     <th className="py-3 px-4">Qualities Run</th>
@@ -1279,37 +1280,37 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-4">Last Active Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {machineWiseRows.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-10 text-center text-[#6B21A8]">
+                      <td colSpan={9} className="py-10 text-center text-[#7A4B5B]">
                         No machine/loom records match the current filters.
                       </td>
                     </tr>
                   ) : (
                     machineWiseRows.map((m) => (
-                      <tr key={m.key} className="hover:bg-[#FAF5FF]">
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">{m.department}</td>
-                        <td className="py-2.5 px-4 font-mono font-bold text-[#9D174D]">
+                      <tr key={m.key} className="hover:bg-[#FDF2F5]">
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{m.department}</td>
+                        <td className="py-2.5 px-4 font-mono font-bold text-[#A87B24]">
                           {m.machine}
                         </td>
                         <td className="py-2.5 px-4">
                           {Array.from(m.qualities).join(', ') || '-'}
                         </td>
-                        <td className="py-2.5 px-3 text-center font-mono">{m.entries}</td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#240046] tabular-nums">
+                        <td className="py-2.5 px-3 text-center font-mono tabular-nums">{m.entries}</td>
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#3B1A26] tabular-nums">
                           {m.totalPrimary.toFixed(2)} {m.primaryLabel}
                         </td>
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                           {m.totalSecondary.toFixed(2)} {m.secondaryLabel}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono">
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums">
                           {m.effCount > 0 ? `${(m.effSum / m.effCount).toFixed(1)}%` : '-'}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono">
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums">
                           {m.breakdownMins > 0 ? `${m.breakdownMins} mins` : '0'}
                         </td>
-                        <td className="py-2.5 px-4 font-mono">{m.lastDate}</td>
+                        <td className="py-2.5 px-4 font-mono tabular-nums">{m.lastDate}</td>
                       </tr>
                     ))
                   )}
@@ -1323,11 +1324,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 5: QUALITY / COUNT / ORDER COLOR WISE PRODUCTION REPORT      */}
         {/* =================================================================== */}
         {reportType === 'quality_color_wise' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Department</th>
                     <th className="py-3 px-4">Quality / Count / Order Color / Mix</th>
                     <th className="py-3 px-3 text-center">Entries</th>
@@ -1336,23 +1337,23 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-4 text-right">Total Secondary Output</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {qualityWiseRows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-10 text-center text-[#6B21A8]">
+                      <td colSpan={6} className="py-10 text-center text-[#7A4B5B]">
                         No quality records match the current filters.
                       </td>
                     </tr>
                   ) : (
                     qualityWiseRows.map((q) => (
-                      <tr key={q.key} className="hover:bg-[#FAF5FF]">
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">{q.department}</td>
-                        <td className="py-2.5 px-4 font-bold text-[#9D174D]">{q.quality}</td>
-                        <td className="py-2.5 px-3 text-center font-mono">{q.entries}</td>
-                        <td className="py-2.5 px-3 text-center font-mono">
+                      <tr key={q.key} className="hover:bg-[#FDF2F5]">
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{q.department}</td>
+                        <td className="py-2.5 px-4 font-bold text-[#A87B24]">{q.quality}</td>
+                        <td className="py-2.5 px-3 text-center font-mono tabular-nums">{q.entries}</td>
+                        <td className="py-2.5 px-3 text-center font-mono tabular-nums">
                           {q.machinesCount.size}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#240046] tabular-nums">
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#3B1A26] tabular-nums">
                           {q.totalPrimary.toFixed(2)} {q.primaryLabel}
                         </td>
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
@@ -1371,11 +1372,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 6: OPERATOR / WEAVER / SUPERVISOR WISE REPORT                */}
         {/* =================================================================== */}
         {reportType === 'operator_weaver_wise' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Operator / Weaver / Supervisor</th>
                     <th className="py-3 px-4">Department</th>
                     <th className="py-3 px-3 text-center">Shifts Worked</th>
@@ -1386,30 +1387,30 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-3 text-right">Avg Efficiency</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {operatorWiseRows.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-10 text-center text-[#6B21A8]">
+                      <td colSpan={8} className="py-10 text-center text-[#7A4B5B]">
                         No operator/weaver records match the current filters.
                       </td>
                     </tr>
                   ) : (
                     operatorWiseRows.map((op) => (
-                      <tr key={op.key} className="hover:bg-[#FAF5FF]">
-                        <td className="py-2.5 px-4 font-bold text-[#9D174D]">{op.operator}</td>
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">{op.department}</td>
-                        <td className="py-2.5 px-3 text-center font-mono">{op.shifts.size}</td>
-                        <td className="py-2.5 px-3 text-center font-mono">{op.entries}</td>
+                      <tr key={op.key} className="hover:bg-[#FDF2F5]">
+                        <td className="py-2.5 px-4 font-bold text-[#A87B24]">{op.operator}</td>
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{op.department}</td>
+                        <td className="py-2.5 px-3 text-center font-mono tabular-nums">{op.shifts.size}</td>
+                        <td className="py-2.5 px-3 text-center font-mono tabular-nums">{op.entries}</td>
                         <td className="py-2.5 px-4 font-mono">
                           {Array.from(op.machines).join(', ') || '-'}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#240046] tabular-nums">
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#3B1A26] tabular-nums">
                           {op.totalPrimary.toFixed(2)} {op.primaryLabel}
                         </td>
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                           {op.totalSecondary.toFixed(2)} {op.secondaryLabel}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono">
+                        <td className="py-2.5 px-3 text-right font-mono tabular-nums">
                           {op.effCount > 0 ? `${(op.effSum / op.effCount).toFixed(1)}%` : '-'}
                         </td>
                       </tr>
@@ -1425,11 +1426,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 7: MACHINE BREAKDOWN & DETENTION ANALYSIS REPORT             */}
         {/* =================================================================== */}
         {reportType === 'breakdown_detention' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Date</th>
                     <th className="py-3 px-3">Shift</th>
                     <th className="py-3 px-4">Department</th>
@@ -1441,31 +1442,31 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-4">Source Table</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {breakdownRows.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-10 text-center text-[#6B21A8]">
+                      <td colSpan={9} className="py-10 text-center text-[#7A4B5B]">
                         No machine breakdown or detention records found for the selected filters.
                       </td>
                     </tr>
                   ) : (
                     breakdownRows.map((r) => (
-                      <tr key={r.id} className="hover:bg-[#FAF5FF]">
-                        <td className="py-2.5 px-4 font-mono font-bold text-[#240046]">{r.date}</td>
-                        <td className="py-2.5 px-3 font-bold text-[#9D174D]">{r.shift}</td>
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">{r.department}</td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-[#240046]">{r.machine}</td>
-                        <td className="py-2.5 px-3 font-mono">
+                      <tr key={r.id} className="hover:bg-[#FDF2F5]">
+                        <td className="py-2.5 px-4 font-mono font-bold text-[#3B1A26] tabular-nums">{r.date}</td>
+                        <td className="py-2.5 px-3 font-bold text-[#A87B24]">{r.shift}</td>
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{r.department}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#3B1A26]">{r.machine}</td>
+                        <td className="py-2.5 px-3 font-mono tabular-nums">
                           {r.flatFields?.stop_time || '-'}
                         </td>
-                        <td className="py-2.5 px-3 font-mono">
+                        <td className="py-2.5 px-3 font-mono tabular-nums">
                           {r.flatFields?.start_time || '-'}
                         </td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-red-600">
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#B8294B] tabular-nums">
                           {r.breakdownMins || r.primaryVal} mins
                         </td>
                         <td className="py-2.5 px-4">{r.remarks || r.flatFields?.reason || '-'}</td>
-                        <td className="py-2.5 px-4 font-mono text-[11px] text-[#6B21A8]">{r.tableName}</td>
+                        <td className="py-2.5 px-4 font-mono text-[11px] text-[#7A4B5B]">{r.tableName}</td>
                       </tr>
                     ))
                   )}
@@ -1481,21 +1482,21 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {reportType === 'beaming_rounds_po' && (
           <div className="space-y-4">
             {beamingAndPoTables.map((tbl) => (
-              <div key={tbl.tableName} className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
-                <div className="px-4 py-3 bg-[#FAF5FF] border-b border-[#E9D5FF] text-[#240046] flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-[#240046]">
+              <div key={tbl.tableName} className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
+                <div className="px-4 py-3 bg-[#FDF2F5] border-b border-[#F1D3DC] text-[#3B1A26] flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#3B1A26]">
                     {tbl.moduleName} &rarr;{' '}
-                    <span className="text-[#9D174D] font-bold">production.{tbl.tableName}</span>
+                    <span className="text-[#A87B24] font-bold">production.{tbl.tableName}</span>
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#6B21A8]">{tbl.rows.length} record(s)</span>
+                  <span className="text-xs font-mono font-bold text-[#7A4B5B] tabular-nums">{tbl.rows.length} record(s)</span>
                 </div>
                 {tbl.rows.length === 0 ? (
-                  <div className="p-4 text-xs text-[#6B21A8]">No rows in {tbl.tableName}</div>
+                  <div className="p-4 text-xs text-[#7A4B5B]">No rows in {tbl.tableName}</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs font-mono">
+                    <table className="w-full text-left border-collapse text-xs font-mono tabular-nums">
                       <thead>
-                        <tr className="bg-[#3B0764] text-white font-bold">
+                        <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold">
                           {tbl.columns.map((c) => (
                             <th key={c.name} className="py-2.5 px-3 whitespace-nowrap">
                               {c.name}
@@ -1503,9 +1504,9 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                      <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                         {tbl.rows.map((row, idx) => (
-                          <tr key={idx} className="hover:bg-[#FAF5FF]">
+                          <tr key={idx} className="hover:bg-[#FDF2F5]">
                             {tbl.columns.map((c) => (
                               <td key={c.name} className="py-2 px-3 whitespace-nowrap">
                                 {String(row[c.name] ?? '')}
@@ -1528,21 +1529,21 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {reportType === 'stock_roll_bales' && (
           <div className="space-y-4">
             {stockAndBaleTables.map((tbl) => (
-              <div key={tbl.tableName} className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
-                <div className="px-4 py-3 bg-[#FAF5FF] border-b border-[#E9D5FF] text-[#240046] flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-[#240046]">
+              <div key={tbl.tableName} className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
+                <div className="px-4 py-3 bg-[#FDF2F5] border-b border-[#F1D3DC] text-[#3B1A26] flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#3B1A26]">
                     {tbl.moduleName} &rarr;{' '}
-                    <span className="text-[#9D174D] font-bold">production.{tbl.tableName}</span>
+                    <span className="text-[#A87B24] font-bold">production.{tbl.tableName}</span>
                   </span>
-                  <span className="text-xs font-mono font-bold text-[#6B21A8]">{tbl.rows.length} record(s)</span>
+                  <span className="text-xs font-mono font-bold text-[#7A4B5B] tabular-nums">{tbl.rows.length} record(s)</span>
                 </div>
                 {tbl.rows.length === 0 ? (
-                  <div className="p-4 text-xs text-[#6B21A8]">No rows in {tbl.tableName}</div>
+                  <div className="p-4 text-xs text-[#7A4B5B]">No rows in {tbl.tableName}</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs font-mono">
+                    <table className="w-full text-left border-collapse text-xs font-mono tabular-nums">
                       <thead>
-                        <tr className="bg-[#3B0764] text-white font-bold">
+                        <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold">
                           {tbl.columns.map((c) => (
                             <th key={c.name} className="py-2.5 px-3 whitespace-nowrap">
                               {c.name}
@@ -1550,9 +1551,9 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                      <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                         {tbl.rows.map((row, idx) => (
-                          <tr key={idx} className="hover:bg-[#FAF5FF]">
+                          <tr key={idx} className="hover:bg-[#FDF2F5]">
                             {tbl.columns.map((c) => (
                               <td key={c.name} className="py-2 px-3 whitespace-nowrap">
                                 {String(row[c.name] ?? '')}
@@ -1573,11 +1574,11 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
         {/* REPORT 10: MASTER UNIFIED CHRONOLOGICAL PRODUCTION LEDGER           */}
         {/* =================================================================== */}
         {reportType === 'unified_chronological' && (
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-[#3B0764] text-white font-bold uppercase tracking-wider">
+                  <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Date</th>
                     <th className="py-3 px-3">Shift</th>
                     <th className="py-3 px-4">Department</th>
@@ -1590,40 +1591,40 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
                     <th className="py-3 px-4">SQL Table / Remarks</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F3E8FF] text-[#1E0538]">
+                <tbody className="divide-y divide-[#F8E2E8] text-[#3B1A26]">
                   {filteredRecords.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-10 text-center text-[#6B21A8]">
+                      <td colSpan={10} className="py-10 text-center text-[#7A4B5B]">
                         No production records match the selected filters.
                       </td>
                     </tr>
                   ) : (
                     filteredRecords.map((r) => (
-                      <tr key={r.id} className="hover:bg-[#FAF5FF] transition-colors">
-                        <td className="py-2.5 px-4 font-mono font-bold text-[#240046] whitespace-nowrap">
+                      <tr key={r.id} className="hover:bg-[#FDF2F5] transition-colors">
+                        <td className="py-2.5 px-4 font-mono font-bold text-[#3B1A26] whitespace-nowrap tabular-nums">
                           {r.date}
                         </td>
-                        <td className="py-2.5 px-3 font-bold text-[#9D174D]">{r.shift}</td>
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">{r.department}</td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-[#240046]">{r.machine}</td>
+                        <td className="py-2.5 px-3 font-bold text-[#A87B24]">{r.shift}</td>
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">{r.department}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#3B1A26]">{r.machine}</td>
                         <td className="py-2.5 px-3 font-mono">{r.beamOrRound || '-'}</td>
                         <td className="py-2.5 px-4">{r.quality}</td>
                         <td className="py-2.5 px-4">{r.operator}</td>
-                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#240046] tabular-nums">
+                        <td className="py-2.5 px-4 text-right font-mono font-bold text-[#3B1A26] tabular-nums">
                           {r.primaryVal}{' '}
-                          <span className="text-[11px] text-[#9D174D]">{r.primaryLabel}</span>
+                          <span className="text-[11px] text-[#A87B24]">{r.primaryLabel}</span>
                         </td>
                         <td className="py-2.5 px-4 text-right font-mono tabular-nums">
                           {r.secondaryVal ? (
                             <>
                               {r.secondaryVal}{' '}
-                              <span className="text-[11px] text-[#6B21A8]">{r.secondaryLabel}</span>
+                              <span className="text-[11px] text-[#7A4B5B]">{r.secondaryLabel}</span>
                             </>
                           ) : (
                             '-'
                           )}
                         </td>
-                        <td className="py-2.5 px-4 text-[11px] font-mono text-[#6B21A8]">
+                        <td className="py-2.5 px-4 text-[11px] font-mono text-[#7A4B5B]">
                           {r.tableName} {r.remarks ? `· ${r.remarks}` : ''}
                         </td>
                       </tr>

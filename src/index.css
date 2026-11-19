@@ -1,23 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --yajur-deep-violet: #240046;
-  --yajur-purple: #3B0764;
-  --yajur-purple-mid: #4C1D95;
-  --yajur-crimson: #831843;
-  --yajur-magenta: #9D174D;
-  --yajur-orange: #EA580C;
-  --yajur-amber: #F59E0B;
-  --bg-canvas: #FAF7FD;
+  /* Exact Rose Pink & Golden Ribbon Palette */
+  --pink-crimson-deep: #8F2B4B;
+  --pink-crimson: #C14468;
+  --pink-mauve: #CB798D;
+  --pink-coral: #EBACAC;
+  --pink-petal: #F8C6D0;
+  --pink-blossom: #FBDDE2;
+  --pink-blush-soft: #FDF2F5;
+
+  --gold-deep: #A67924;
+  --gold-base: #CD9E43;
+  --gold-mid: #E2B760;
+  --gold-shine: #F6D281;
+  --gold-warm: #E9C16B;
+
+  --bg-canvas: #FBF7ED;
   --bg-surface: #FFFFFF;
-  --text-primary: #1E0538;
-  --text-secondary: #4C1D95;
-  --border-subtle: #E9D5FF;
+  --text-primary: #3B1A26;
+  --text-secondary: #7A4B5B;
+  --border-subtle: #F1D3DC;
 }
 
 @layer base {
   body {
-    font-family: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'DM Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background-color: var(--bg-canvas);
     color: var(--text-primary);
     font-weight: 400;
@@ -29,7 +37,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.015em;
@@ -37,7 +45,7 @@
 
   label {
     font-weight: 600;
-    color: #2E1065;
+    color: #542134;
   }
 
   th {
@@ -50,7 +58,7 @@
 
   input, select, textarea {
     font-weight: 500;
-    color: #1E0538;
+    color: #3B1A26;
   }
 
   button {
@@ -67,39 +75,52 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* YAJUR Theme Surface Utilities (Matching Screenshots 1, 2 & 3) */
-.yajur-banner {
-  background: linear-gradient(90deg, #3B0764 0%, #831843 52%, #EA580C 100%);
-  color: #FFFFFF;
-  box-shadow: 0 4px 14px -2px rgba(59, 7, 100, 0.25);
+/* Rose Pink & Metallic Golden Ribbon Surface Utilities */
+.gold-ribbon-bar {
+  background: linear-gradient(90deg, #CC9D42 0%, #E2B760 25%, #F6D281 50%, #E9C16B 75%, #CD9E43 100%);
 }
 
-.yajur-sidebar {
-  background: linear-gradient(180deg, #240046 0%, #2E0854 55%, #1A0033 100%);
+.rose-banner {
+  background: linear-gradient(100deg, #8F2B4B 0%, #C14468 58%, #CB798D 100%);
   color: #FFFFFF;
-  border-right: 1px solid #3B0764;
+  position: relative;
+  box-shadow: 0 6px 20px -6px rgba(143, 43, 75, 0.3);
+  border-bottom: 4px solid #E2B760;
 }
 
-.yajur-active-pill {
-  background: linear-gradient(90deg, #9D174D 0%, #C2410C 55%, #EA580C 100%);
+.rose-sidebar {
+  background: linear-gradient(180deg, #8C2848 0%, #B33B5F 52%, #751E3B 100%);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
+  border-right: 3px solid #E2B760;
 }
 
-.yajur-active-tab {
-  background: linear-gradient(90deg, #4C1D95 0%, #9D174D 100%);
-  color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(76, 29, 149, 0.25);
+.rose-active-pill {
+  background: linear-gradient(90deg, #CC9D42 0%, #E6BD67 50%, #CD9E43 100%);
+  color: #3E1523;
+  box-shadow: 0 3px 12px rgba(205, 158, 67, 0.38);
 }
 
-.yajur-primary-btn {
-  background: #3B0764;
+.rose-active-tab {
+  background: linear-gradient(90deg, #A33255 0%, #C14468 100%);
   color: #FFFFFF;
-  border: 1px solid #4C1D95;
-  transition: all 0.15s ease;
+  box-shadow: 0 3px 10px rgba(193, 68, 104, 0.28);
+  border-bottom: 2px solid #E9C16B;
 }
 
-.yajur-primary-btn:hover {
-  background: #4C1D95;
+.gold-ribbon-btn {
+  background: linear-gradient(90deg, #BA8B33 0%, #D7AA4F 30%, #E2B760 50%, #D5A64A 72%, #B8882F 100%);
   color: #FFFFFF;
+  text-shadow: 0 1px 1px rgba(92, 58, 12, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 243, 210, 0.55), 0 4px 14px -4px rgba(184, 136, 47, 0.45);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gold-ribbon-btn:hover {
+  filter: brightness(0.96);
+  box-shadow: inset 0 1px 0 rgba(255, 243, 210, 0.6), 0 8px 20px -4px rgba(184, 136, 47, 0.55);
+}
+
+.rose-dot-pattern {
+  background-image: radial-gradient(#E5B8C4 1.4px, transparent 1.4px);
+  background-size: 14px 14px;
 }

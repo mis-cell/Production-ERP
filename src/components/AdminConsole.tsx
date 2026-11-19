@@ -470,10 +470,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
   );
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#FAF7FD] p-6 text-[#1E0538]">
+    <div className="flex-1 overflow-y-auto bg-[#FBF7ED] p-6 text-[#3B1A26]">
       <div className="max-w-[1440px] mx-auto space-y-5">
-        {/* Top Admin Banner Matching Screenshot 2 (YAJUR Purple-Crimson-Orange Gradient) */}
-        <div className="rounded-2xl yajur-banner p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Top Admin Banner */}
+        <div className="rounded-2xl rose-banner p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-bold tracking-tight text-white">
               System Administration &amp; Permission Control
@@ -496,10 +496,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                     setTogglingMaint(false);
                   }
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-sm ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-sm whitespace-nowrap ${
                   maintenanceActive
-                    ? 'bg-[#DC2626] hover:bg-[#B91C1C] text-white border border-red-300 animate-pulse'
-                    : 'bg-[#F59E0B] hover:bg-[#D97706] text-[#1E0538] border border-amber-300'
+                    ? 'bg-[#B8294B] hover:bg-[#991F3C] text-white border border-red-300'
+                    : 'gold-ribbon-btn text-white border border-[#F6D281]/50'
                 }`}
               >
                 <Power className="w-3.5 h-3.5" />
@@ -508,9 +508,9 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
             )}
             <button
               onClick={fetchOverview}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-semibold cursor-pointer self-start md:self-auto transition-colors"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-semibold cursor-pointer self-start md:self-auto transition-colors whitespace-nowrap"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#FDE68A] ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-[#F6D281] ${loading ? 'animate-spin' : ''}`} />
               Refresh Admin Data
             </button>
           </div>
@@ -522,28 +522,27 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
             className={`rounded-2xl border p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
               maintenanceActive
                 ? 'bg-red-50 border-red-300 text-red-950'
-                : 'bg-white border-[#E9D5FF] text-[#1E0538]'
+                : 'bg-white border-[#F1D3DC] text-[#3B1A26]'
             }`}
           >
             <div className="flex items-start gap-3 flex-1">
               <div
                 className={`p-2.5 rounded-xl shrink-0 ${
-                  maintenanceActive ? 'bg-red-600 text-white' : 'bg-[#F3E8FF] text-[#6B21A8]'
+                  maintenanceActive ? 'bg-[#B8294B] text-white' : 'bg-[#FBDDE2] text-[#8F2B4B]'
                 }`}
               >
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div className="flex-1 space-y-1.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="text-sm font-bold">Server Maintenance Mode</span>
+                  <span className="text-[#EBACAC]" aria-hidden="true">·</span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                      maintenanceActive
-                        ? 'bg-red-600 text-white'
-                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    className={`text-xs font-bold ${
+                      maintenanceActive ? 'text-[#B8294B]' : 'text-[#2F6E3D]'
                     }`}
                   >
-                    {maintenanceActive ? 'ACTIVE — USERS LOCKED OUT' : 'NORMAL OPERATION'}
+                    {maintenanceActive ? 'Active — Non-Admin Users Locked Out' : 'Normal Operation'}
                   </span>
                 </div>
                 <input
@@ -551,7 +550,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   value={customMaintMsg}
                   onChange={(e) => setCustomMaintMsg(e.target.value)}
                   placeholder="Server is under maintenance. We will be back shortly."
-                  className="w-full px-3 py-1.5 text-xs font-medium rounded-lg border border-[#D8B4FE] bg-white text-[#1E0538] focus:outline-none focus:border-[#9D174D]"
+                  className="w-full px-3 py-1.5 text-xs font-medium rounded-lg border border-[#ECC5D0] bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
                 />
               </div>
             </div>
@@ -571,10 +570,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                     setTogglingMaint(false);
                   }
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-xs whitespace-nowrap ${
                   maintenanceActive
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                    : 'bg-[#DC2626] hover:bg-[#B91C1C] text-white'
+                    ? 'bg-[#2F6E3D] hover:bg-[#255931] text-white'
+                    : 'bg-[#B8294B] hover:bg-[#991F3C] text-white'
                 }`}
               >
                 {maintenanceActive ? 'Deactivate Maintenance Mode' : 'Activate Maintenance Mode'}
@@ -589,7 +588,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
             className={`px-4 py-3 rounded-xl border text-xs font-semibold flex items-center justify-between ${
               statusBanner.type === 'error'
                 ? 'bg-red-50 border-red-200 text-red-800'
-                : 'bg-[#F3E8FF] border-[#D8B4FE] text-[#3B0764]'
+                : 'bg-[#FBDDE2] border-[#F8C6D0] text-[#8F2B4B]'
             }`}
           >
             <span>{statusBanner.text}</span>
@@ -602,14 +601,14 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           </div>
         )}
 
-        {/* Navigation Tabs Matching Screenshot 2 */}
-        <div className="flex flex-wrap gap-2.5 border-b border-[#E9D5FF] pb-3">
+        {/* Navigation Tabs */}
+        <div className="flex flex-wrap gap-2.5 border-b border-[#F1D3DC] pb-3">
           <button
             onClick={() => setActiveTab('users')}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'users'
-                ? 'yajur-active-tab text-white'
-                : 'bg-white text-[#240046] border border-[#E9D5FF] hover:bg-[#FAF5FF]'
+                ? 'rose-active-tab text-white'
+                : 'bg-white text-[#3B1A26] border border-[#F1D3DC] hover:bg-[#FDF2F5]'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -617,10 +616,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('roles')}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'roles'
-                ? 'yajur-active-tab text-white'
-                : 'bg-white text-[#240046] border border-[#E9D5FF] hover:bg-[#FAF5FF]'
+                ? 'rose-active-tab text-white'
+                : 'bg-white text-[#3B1A26] border border-[#F1D3DC] hover:bg-[#FDF2F5]'
             }`}
           >
             <Shield className="w-4 h-4" />
@@ -628,10 +627,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('database')}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'database'
-                ? 'yajur-active-tab text-white'
-                : 'bg-white text-[#240046] border border-[#E9D5FF] hover:bg-[#FAF5FF]'
+                ? 'rose-active-tab text-white'
+                : 'bg-white text-[#3B1A26] border border-[#F1D3DC] hover:bg-[#FDF2F5]'
             }`}
           >
             <Database className="w-4 h-4" />
@@ -644,13 +643,13 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         {/* =================================================================== */}
         {activeTab === 'users' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-5 bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden flex flex-col">
-              <div className="p-4 bg-[#FAF5FF] border-b border-[#E9D5FF] flex items-center justify-between">
-                <h2 className="text-sm font-bold text-[#240046]">User Accounts</h2>
+            <div className="lg:col-span-5 bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden flex flex-col">
+              <div className="p-4 bg-[#FDF2F5] border-b border-[#F1D3DC] flex items-center justify-between">
+                <h2 className="text-sm font-bold text-[#3B1A26]">User Accounts</h2>
                 {isCurrentUserAdmin && (
                   <button
                     onClick={openCreateUserModal}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg gold-ribbon-btn text-white text-xs font-semibold cursor-pointer shadow-xs transition-colors whitespace-nowrap"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Create New User
@@ -658,7 +657,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                 )}
               </div>
 
-              <div className="divide-y divide-[#F3E8FF] bg-white">
+              <div className="divide-y divide-[#F8E2E8] bg-white">
                 {users.map((u) => {
                   const isSelected = u.id === selectedUserId;
                   const accessibleCount = u.effectivePermissions.filter((p) => p.canView).length;
@@ -670,29 +669,29 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                       onClick={() => handleSelectUserForPerms(u)}
                       className={`p-4 transition-colors cursor-pointer ${
                         isSelected
-                          ? 'bg-[#FAF5FF] border-l-4 border-l-[#9D174D]'
-                          : 'hover:bg-[#FAF5FF]/60'
+                          ? 'bg-[#FBDDE2]'
+                          : 'hover:bg-[#FEF6F8]'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-[#240046]">{u.fullName}</span>
+                            <span className="font-bold text-sm text-[#3B1A26]">{u.fullName}</span>
                             {!u.isActive && (
-                              <span className="text-xs font-semibold text-red-600">(Disabled)</span>
+                              <span className="text-xs font-semibold text-[#B8294B]">(Disabled)</span>
                             )}
                           </div>
-                          <div className="text-xs text-[#4C1D95] mt-0.5 font-mono">
-                            Login ID: <strong className="text-[#9D174D] font-bold">{u.username}</strong> · Role:{' '}
-                            <strong className="text-[#9D174D] font-bold">{u.roleName}</strong>
+                          <div className="text-xs text-[#7A4B5B] mt-0.5 font-mono">
+                            Login ID: <strong className="text-[#A87B24] font-bold">{u.username}</strong> · Role:{' '}
+                            <strong className="text-[#8F2B4B] font-bold">{u.roleName}</strong>
                           </div>
-                          <div className="text-xs text-[#3B0764] mt-1">
+                          <div className="text-xs text-[#6D3B4C] mt-1">
                             Allowed Forms:{' '}
-                            <strong className="tabular-nums font-bold text-[#9D174D]">
+                            <strong className="tabular-nums font-bold text-[#A87B24]">
                               {accessibleCount}/16
                             </strong>
                             {overrideCount > 0 && (
-                              <span className="text-[#9D174D] font-semibold">
+                              <span className="text-[#8F2B4B] font-semibold">
                                 {' '}· {overrideCount} Custom Override(s)
                               </span>
                             )}
@@ -703,7 +702,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                             <button
                               onClick={() => openEditUserModal(u)}
                               title="Edit User"
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-[#3B0764] hover:bg-[#F3E8FF] border border-[#E9D5FF] cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-[#8F2B4B] hover:bg-[#F8C6D0] border border-[#ECC5D0] bg-white cursor-pointer"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                               Edit
@@ -712,7 +711,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                               <button
                                 onClick={() => handleDeleteUser(u.id, u.username)}
                                 title="Delete User"
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-red-600 hover:bg-red-50 border border-red-200 cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-[#B8294B] hover:bg-red-50 border border-red-200 bg-white cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Delete
@@ -727,12 +726,12 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
               </div>
             </div>
 
-            <div className="lg:col-span-7 bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden flex flex-col">
+            <div className="lg:col-span-7 bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden flex flex-col">
               {!selectedUserObj?.isAdmin && isCurrentUserAdmin && (
-                <div className="p-4 bg-[#FAF5FF] border-b border-[#E9D5FF] flex items-center justify-end">
+                <div className="p-4 bg-[#FDF2F5] border-b border-[#F1D3DC] flex items-center justify-end">
                   <button
                     onClick={saveUserSpecificPermissions}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white text-xs font-semibold cursor-pointer shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#C14468] hover:bg-[#A63556] text-white text-xs font-semibold cursor-pointer shadow-xs whitespace-nowrap"
                   >
                     <Save className="w-3.5 h-3.5" />
                     Save Permissions
@@ -743,7 +742,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
               <div className="overflow-x-auto bg-white">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-[#3B0764] text-white text-[11px] font-bold uppercase tracking-wider">
+                    <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] text-[11px] font-bold uppercase tracking-wider">
                       <th className="py-2.5 px-3">Department Form (1–16)</th>
                       <th className="py-2.5 px-3">Rule Type</th>
                       <th className="py-2.5 px-2 text-center">Show Form</th>
@@ -753,14 +752,14 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                       <th className="py-2.5 px-2 text-center">View Report</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F3E8FF] text-xs text-[#240046]">
+                  <tbody className="divide-y divide-[#F8E2E8] text-xs text-[#3B1A26]">
                     {userPermDraft.map((perm, idx) => (
-                      <tr key={perm.moduleKey} className="hover:bg-[#FAF5FF]">
+                      <tr key={perm.moduleKey} className="hover:bg-[#FDF2F5]">
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-[#240046]">
+                          <div className="font-bold text-[#3B1A26]">
                             {idx + 1}. {perm.moduleName}
                           </div>
-                          <div className="text-[11px] text-[#6B21A8]">{perm.category}</div>
+                          <div className="text-[11px] text-[#7A4B5B]">{perm.category}</div>
                         </td>
                         <td className="py-2.5 px-3">
                           <select
@@ -775,10 +774,10 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                             }
                             className={`text-xs rounded-md border px-2 py-1 font-semibold ${
                               perm.overrideMode === 'grant'
-                                ? 'border-[#D8B4FE] bg-[#F3E8FF] text-[#3B0764]'
+                                ? 'border-[#F8C6D0] bg-[#FBDDE2] text-[#8F2B4B]'
                                 : perm.overrideMode === 'revoke'
                                 ? 'border-red-300 bg-red-50 text-red-800'
-                                : 'border-[#E9D5FF] bg-white text-[#240046]'
+                                : 'border-[#F1D3DC] bg-white text-[#3B1A26]'
                             }`}
                           >
                             <option value="inherit">Use Role Default</option>
@@ -799,7 +798,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                               onChange={(e) =>
                                 handleUserPermChange(perm.moduleKey, field, e.target.checked)
                               }
-                              className="w-4 h-4 accent-[#9D174D] rounded cursor-pointer"
+                              className="w-4 h-4 accent-[#C14468] rounded cursor-pointer"
                             />
                           </td>
                         ))}
@@ -818,11 +817,11 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         {activeTab === 'roles' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-4 space-y-5">
-              <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
-                <div className="p-4 bg-[#FAF5FF] border-b border-[#E9D5FF]">
-                  <h2 className="text-sm font-bold text-[#240046]">Roles List</h2>
+              <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-4 bg-[#FDF2F5] border-b border-[#F1D3DC]">
+                  <h2 className="text-sm font-bold text-[#3B1A26]">Roles List</h2>
                 </div>
-                <div className="divide-y divide-[#F3E8FF] bg-white">
+                <div className="divide-y divide-[#F8E2E8] bg-white">
                   {orderedRoles.map((r) => {
                     const activeCount = r.permissions.filter((p) => p.canView).length;
                     return (
@@ -831,13 +830,13 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                         onClick={() => handleSelectRole(r)}
                         className={`p-3.5 cursor-pointer transition-colors ${
                           r.id === selectedRoleId
-                            ? 'bg-[#FAF5FF] border-l-4 border-l-[#9D174D]'
-                            : 'hover:bg-[#FAF5FF]/60'
+                            ? 'bg-[#FBDDE2]'
+                            : 'hover:bg-[#FEF6F8]'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-[#240046]">{r.name}</span>
-                          <span className="text-xs font-mono font-semibold text-[#9D174D] tabular-nums">
+                          <span className="font-bold text-xs text-[#3B1A26]">{r.name}</span>
+                          <span className="text-xs font-mono font-semibold text-[#A87B24] tabular-nums">
                             {activeCount}/16 forms
                           </span>
                         </div>
@@ -850,23 +849,23 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
               {isCurrentUserAdmin && (
                 <form
                   onSubmit={handleCreateRole}
-                  className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs p-4 space-y-3"
+                  className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs p-4 space-y-3"
                 >
-                  <h3 className="text-xs font-bold text-[#240046]">Add New Role</h3>
+                  <h3 className="text-xs font-bold text-[#3B1A26]">Add New Role</h3>
                   <div>
-                    <label className="block text-xs font-semibold text-[#3B0764] mb-1">Role Name</label>
+                    <label className="block text-xs font-semibold text-[#8F2B4B] mb-1">Role Name</label>
                     <input
                       type="text"
                       required
                       value={newRoleName}
                       onChange={(e) => setNewRoleName(e.target.value)}
                       placeholder="e.g., Shift Supervisor"
-                      className="w-full px-3 py-2 text-xs border border-[#D8B4FE] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                      className="w-full px-3 py-2 text-xs border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="w-full py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white text-xs font-semibold cursor-pointer transition-colors"
+                    className="w-full py-2 rounded-lg bg-[#C14468] hover:bg-[#A63556] text-white text-xs font-semibold cursor-pointer transition-colors"
                   >
                     Create Role
                   </button>
@@ -874,16 +873,16 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
               )}
             </div>
 
-            <div className="lg:col-span-8 bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
-              <div className="p-4 bg-[#FAF5FF] border-b border-[#E9D5FF] flex items-center justify-between">
-                <h2 className="text-sm font-bold text-[#240046]">
+            <div className="lg:col-span-8 bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
+              <div className="p-4 bg-[#FDF2F5] border-b border-[#F1D3DC] flex items-center justify-between">
+                <h2 className="text-sm font-bold text-[#3B1A26]">
                   Role Permissions: {selectedRoleObj?.name}
                 </h2>
                 {isCurrentUserAdmin && (
                   <button
                     onClick={saveRolePermissions}
                     disabled={selectedRoleObj?.isAdmin}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] disabled:opacity-40 text-white text-xs font-semibold cursor-pointer shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#C14468] hover:bg-[#A63556] disabled:opacity-40 text-white text-xs font-semibold cursor-pointer shadow-xs whitespace-nowrap"
                   >
                     <Save className="w-3.5 h-3.5" />
                     Save Role Permissions
@@ -894,7 +893,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
               <div className="overflow-x-auto bg-white">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-[#3B0764] text-white text-[11px] font-bold uppercase tracking-wider">
+                    <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] text-[11px] font-bold uppercase tracking-wider">
                       <th className="py-2.5 px-4">Department Form</th>
                       <th className="py-2.5 px-3">Group</th>
                       <th className="py-2.5 px-2 text-center">Show Form</th>
@@ -904,13 +903,13 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                       <th className="py-2.5 px-2 text-center">View Report</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F3E8FF] text-xs text-[#240046]">
+                  <tbody className="divide-y divide-[#F8E2E8] text-xs text-[#3B1A26]">
                     {rolePermDraft.map((perm, idx) => (
-                      <tr key={perm.moduleKey} className="hover:bg-[#FAF5FF]">
-                        <td className="py-2.5 px-4 font-bold text-[#240046]">
+                      <tr key={perm.moduleKey} className="hover:bg-[#FDF2F5]">
+                        <td className="py-2.5 px-4 font-bold text-[#3B1A26]">
                           {idx + 1}. {perm.moduleName}
                         </td>
-                        <td className="py-2.5 px-3 text-[#6B21A8]">{perm.category}</td>
+                        <td className="py-2.5 px-3 text-[#7A4B5B]">{perm.category}</td>
                         {(['canView', 'canCreate', 'canEdit', 'canDelete', 'canReport'] as const).map((field) => (
                           <td key={field} className="py-2.5 px-2 text-center">
                             <input
@@ -918,7 +917,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                               checked={Boolean(perm[field])}
                               disabled={selectedRoleObj?.isAdmin || !isCurrentUserAdmin}
                               onChange={() => handleRolePermToggle(perm.moduleKey, field)}
-                              className="w-4 h-4 accent-[#9D174D] rounded cursor-pointer"
+                              className="w-4 h-4 accent-[#C14468] rounded cursor-pointer"
                             />
                           </td>
                         ))}
@@ -936,48 +935,48 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
         {/* =================================================================== */}
         {activeTab === 'database' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-4 bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden flex flex-col max-h-[760px]">
-              <div className="p-4 bg-[#FAF5FF] border-b border-[#E9D5FF] space-y-2.5">
+            <div className="lg:col-span-4 bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden flex flex-col max-h-[760px]">
+              <div className="p-4 bg-[#FDF2F5] border-b border-[#F1D3DC] space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-bold text-[#240046]">
-                    Database: <code className="font-mono font-bold text-[#9D174D]">production</code>
+                  <h2 className="text-xs font-bold text-[#3B1A26]">
+                    Database: <code className="font-mono font-bold text-[#A87B24]">production</code>
                   </h2>
-                  <span className="text-xs font-mono font-semibold text-[#6B21A8] tabular-nums">
+                  <span className="text-xs font-mono font-semibold text-[#7A4B5B] tabular-nums">
                     {dbTables.length} Tables
                   </span>
                 </div>
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-[#9333EA] absolute left-3 top-2.5" />
+                  <Search className="w-3.5 h-3.5 text-[#CB798D] absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={tableSearch}
                     onChange={(e) => setTableSearch(e.target.value)}
                     placeholder="Filter tables..."
-                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#E9D5FF] rounded-lg bg-white text-[#240046] focus:outline-none focus:border-[#9D174D]"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#ECC5D0] rounded-lg bg-white text-[#3B1A26] focus:outline-none focus:border-[#C14468]"
                   />
                 </div>
               </div>
 
-              <div className="overflow-y-auto divide-y divide-[#F3E8FF] flex-1 bg-white">
+              <div className="overflow-y-auto divide-y divide-[#F8E2E8] flex-1 bg-white">
                 {filteredTables.map((t) => (
                   <button
                     key={t.tableName}
                     onClick={() => setSelectedTable(t.tableName)}
                     className={`w-full text-left p-3 transition-colors flex items-center justify-between cursor-pointer ${
                       selectedTable === t.tableName
-                        ? 'bg-[#FAF5FF] border-l-4 border-l-[#9D174D]'
-                        : 'hover:bg-[#FAF5FF]/60'
+                        ? 'bg-[#FBDDE2]'
+                        : 'hover:bg-[#FEF6F8]'
                     }`}
                   >
                     <div>
-                      <div className="font-mono text-xs font-bold text-[#240046]">
+                      <div className="font-mono text-xs font-bold text-[#3B1A26]">
                         {t.tableName}
                       </div>
-                      <div className="text-[11px] text-[#6B21A8] mt-0.5">
+                      <div className="text-[11px] text-[#7A4B5B] mt-0.5">
                         {t.moduleName} · {t.columns.length} cols
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-[#9D174D] tabular-nums">
+                    <span className="text-xs font-mono font-bold text-[#A87B24] tabular-nums">
                       {t.rowCount} rows
                     </span>
                   </button>
@@ -986,25 +985,25 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
             </div>
 
             <div className="lg:col-span-8 space-y-6">
-              <div className="bg-white border border-[#E9D5FF] rounded-2xl shadow-xs overflow-hidden">
-                <div className="p-4 bg-[#FAF5FF] border-b border-[#E9D5FF] flex flex-wrap items-center justify-between gap-2">
+              <div className="bg-white border border-[#F1D3DC] rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-4 bg-[#FDF2F5] border-b border-[#F1D3DC] flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <TableIcon className="w-4 h-4 text-[#9D174D]" />
-                      <h3 className="font-mono text-sm font-bold text-[#240046]">
+                      <TableIcon className="w-4 h-4 text-[#CD9E43]" />
+                      <h3 className="font-mono text-sm font-bold text-[#3B1A26]">
                         production.{selectedTable}
                       </h3>
                     </div>
-                    <p className="text-[11px] text-[#6B21A8] mt-0.5">
+                    <p className="text-[11px] text-[#7A4B5B] mt-0.5">
                       Live table rows stored in production.db &amp; PostgreSQL production
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => loadTableRows(selectedTable)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E9D5FF] bg-white text-xs font-semibold text-[#240046] hover:bg-[#FAF5FF] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#ECC5D0] bg-white text-xs font-semibold text-[#3B1A26] hover:bg-[#FDF2F5] cursor-pointer whitespace-nowrap"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 text-[#6B21A8] ${loadingTable ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 text-[#7A4B5B] ${loadingTable ? 'animate-spin' : ''}`} />
                       Reload
                     </button>
                     <button
@@ -1012,7 +1011,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                         navigator.clipboard.writeText(schemaSql);
                         showToast('Copied SQL Schema to clipboard!');
                       }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white text-xs font-semibold cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#C14468] hover:bg-[#A63556] text-white text-xs font-semibold cursor-pointer shadow-xs whitespace-nowrap"
                     >
                       <Copy className="w-3.5 h-3.5" />
                       Copy SQL Schema
@@ -1020,62 +1019,60 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   </div>
                 </div>
 
-                <div className="px-4 py-2.5 bg-[#FAF5FF]/50 border-b border-[#E9D5FF] flex flex-wrap gap-1.5">
-                  {tableData.columns.map((col: any) => (
-                    <span
-                      key={col.name}
-                      className="font-mono text-[11px] text-[#240046] bg-white border border-[#E9D5FF] px-2 py-0.5 rounded"
-                    >
-                      <strong className="font-bold text-[#240046]">{col.name}</strong>:{' '}
-                      <span className="text-[#6B21A8]">{col.type}</span>
+                <div className="px-4 py-2.5 bg-[#FEF8FA] border-b border-[#F1D3DC] flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-mono text-[#7A4B5B]">
+                  {tableData.columns.map((col: any, idx: number) => (
+                    <span key={col.name}>
+                      <strong className="font-bold text-[#3B1A26]">{col.name}</strong>:{' '}
+                      <span>{col.type}</span>
                       {col.pk ? ' (PK)' : ''}
+                      {idx < tableData.columns.length - 1 ? ' ·' : ''}
                     </span>
                   ))}
                 </div>
 
                 <div className="overflow-x-auto max-h-[520px] bg-white">
                   {tableData.rows.length === 0 ? (
-                    <div className="p-8 text-center text-xs font-medium text-[#6B21A8]">
-                      No rows in <code className="font-mono font-bold text-[#240046]">{selectedTable}</code> yet.
+                    <div className="p-8 text-center text-xs font-medium text-[#7A4B5B]">
+                      No rows in <code className="font-mono font-bold text-[#3B1A26]">{selectedTable}</code> yet.
                     </div>
                   ) : (
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-[#3B0764] text-white text-[11px] font-mono font-bold">
+                        <tr className="bg-[#A83457] text-white border-b-2 border-[#E2B760] text-[11px] font-mono font-bold">
                           {tableData.columns.map((c: any) => (
                             <th key={c.name} className="py-2.5 px-3 whitespace-nowrap">
                               {c.name}
                             </th>
                           ))}
                           {isCurrentUserAdmin && (
-                            <th className="py-2.5 px-3 whitespace-nowrap text-right sticky right-0 bg-[#3B0764] shadow-[-4px_0_8px_rgba(0,0,0,0.15)]">
+                            <th className="py-2.5 px-3 whitespace-nowrap text-right sticky right-0 bg-[#A83457] shadow-[-4px_0_8px_rgba(0,0,0,0.15)]">
                               actions (admin)
                             </th>
                           )}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#F3E8FF] text-xs font-mono text-[#1E0538]">
+                      <tbody className="divide-y divide-[#F8E2E8] text-xs font-mono text-[#3B1A26] tabular-nums">
                         {tableData.rows.map((row: any, idx: number) => {
                           const isPrimarySuperAdminUserRow =
                             selectedTable === 'users' && Number(row.id) === 1;
                           return (
-                            <tr key={row.__rowid__ ?? idx} className="hover:bg-[#FAF5FF]">
+                            <tr key={row.__rowid__ ?? idx} className="hover:bg-[#FDF2F5]">
                               {tableData.columns.map((c: any) => (
                                 <td
                                   key={c.name}
-                                  className="py-2.5 px-3 max-w-[240px] truncate text-[#1E0538]"
+                                  className="py-2.5 px-3 max-w-[240px] truncate text-[#3B1A26]"
                                   title={String(row[c.name] ?? '')}
                                 >
                                   {String(row[c.name] ?? '')}
                                 </td>
                               ))}
                               {isCurrentUserAdmin && (
-                                <td className="py-2 px-3 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs border-l border-[#F3E8FF]">
+                                <td className="py-2 px-3 whitespace-nowrap text-right sticky right-0 bg-white/95 backdrop-blur-xs border-l border-[#F8E2E8]">
                                   <div className="inline-flex items-center gap-1.5">
                                     <button
                                       onClick={() => openEditDbRowModal(row)}
                                       title="Edit Row (Admin Only)"
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#F3E8FF] hover:bg-[#E9D5FF] text-[#3B0764] font-sans text-[11px] font-bold cursor-pointer transition-colors"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#FBDDE2] hover:bg-[#F8C6D0] text-[#8F2B4B] font-sans text-[11px] font-bold cursor-pointer transition-colors"
                                     >
                                       <Edit3 className="w-3 h-3" />
                                       Edit
@@ -1088,7 +1085,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                                           ? 'Primary Super Admin cannot be deleted'
                                           : 'Delete Row (Admin Only)'
                                       }
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-35 disabled:cursor-not-allowed font-sans text-[11px] font-bold cursor-pointer transition-colors"
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 hover:bg-red-100 text-[#B8294B] disabled:opacity-35 disabled:cursor-not-allowed font-sans text-[11px] font-bold cursor-pointer transition-colors"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                       Delete
@@ -1113,14 +1110,14 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
       {/* MODAL 1: CREATE / EDIT USER MODAL                                   */}
       {/* =================================================================== */}
       {showUserForm && (
-        <div className="fixed inset-0 z-50 bg-[#1E0538]/55 backdrop-blur-[1px] flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-[#240046]">
+        <div className="fixed inset-0 z-50 bg-[#4A1426]/55 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-[#3B1A26]">
               {editingUser ? `Edit User: @${editingUser.username}` : 'Create New User Account'}
             </h3>
-            <form onSubmit={handleSaveUserForm} className="space-y-3.5 text-xs text-[#240046]">
+            <form onSubmit={handleSaveUserForm} className="space-y-3.5 text-xs text-[#3B1A26]">
               <div>
-                <label className="block font-semibold text-[#3B0764] mb-1">Username (Login ID)</label>
+                <label className="block font-semibold text-[#8F2B4B] mb-1">Username (Login ID)</label>
                 <input
                   type="text"
                   required
@@ -1128,11 +1125,11 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   value={userForm.username}
                   onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
                   placeholder="e.g. carding_user"
-                  className="w-full px-3 py-2 border border-[#D8B4FE] rounded-lg bg-white text-[#240046] font-medium disabled:bg-[#FAF5FF] focus:outline-none focus:border-[#9D174D]"
+                  className="w-full px-3 py-2 border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] font-medium disabled:bg-[#FDF2F5] focus:outline-none focus:border-[#C14468]"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-[#3B0764] mb-1">
+                <label className="block font-semibold text-[#8F2B4B] mb-1">
                   {editingUser ? 'New Password (leave blank to keep current)' : 'Password'}
                 </label>
                 <input
@@ -1141,39 +1138,39 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   value={userForm.password}
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                   placeholder="Enter password"
-                  className="w-full px-3 py-2 border border-[#D8B4FE] rounded-lg bg-white text-[#240046] font-medium focus:outline-none focus:border-[#9D174D]"
+                  className="w-full px-3 py-2 border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] font-medium focus:outline-none focus:border-[#C14468]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-[#3B0764] mb-1">Full Name</label>
+                  <label className="block font-semibold text-[#8F2B4B] mb-1">Full Name</label>
                   <input
                     type="text"
                     required
                     value={userForm.fullName}
                     onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
                     placeholder="Operator Name"
-                    className="w-full px-3 py-2 border border-[#D8B4FE] rounded-lg bg-white text-[#240046] font-medium focus:outline-none focus:border-[#9D174D]"
+                    className="w-full px-3 py-2 border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] font-medium focus:outline-none focus:border-[#C14468]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#3B0764] mb-1">Employee Code</label>
+                  <label className="block font-semibold text-[#8F2B4B] mb-1">Employee Code</label>
                   <input
                     type="text"
                     value={userForm.employeeCode}
                     onChange={(e) => setUserForm({ ...userForm, employeeCode: e.target.value })}
                     placeholder="BJM-105"
-                    className="w-full px-3 py-2 border border-[#D8B4FE] rounded-lg bg-white text-[#240046] font-medium focus:outline-none focus:border-[#9D174D]"
+                    className="w-full px-3 py-2 border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] font-medium focus:outline-none focus:border-[#C14468]"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-[#3B0764] mb-1">Assign Role</label>
+                  <label className="block font-semibold text-[#8F2B4B] mb-1">Assign Role</label>
                   <select
                     value={userForm.roleId}
                     onChange={(e) => setUserForm({ ...userForm, roleId: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-[#D8B4FE] rounded-lg bg-white text-[#240046] font-medium focus:outline-none focus:border-[#9D174D]"
+                    className="w-full px-3 py-2 border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] font-medium focus:outline-none focus:border-[#C14468]"
                   >
                     {orderedRoles.map((r) => (
                       <option key={r.id} value={r.id}>
@@ -1183,12 +1180,12 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#3B0764] mb-1">Department</label>
+                  <label className="block font-semibold text-[#8F2B4B] mb-1">Department</label>
                   <input
                     type="text"
                     value={userForm.department}
                     onChange={(e) => setUserForm({ ...userForm, department: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#D8B4FE] rounded-lg bg-white text-[#240046] font-medium focus:outline-none focus:border-[#9D174D]"
+                    className="w-full px-3 py-2 border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] font-medium focus:outline-none focus:border-[#C14468]"
                   />
                 </div>
               </div>
@@ -1198,23 +1195,23 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                   id="userActiveChk"
                   checked={userForm.isActive}
                   onChange={(e) => setUserForm({ ...userForm, isActive: e.target.checked })}
-                  className="w-4 h-4 accent-[#9D174D] rounded"
+                  className="w-4 h-4 accent-[#C14468] rounded"
                 />
-                <label htmlFor="userActiveChk" className="font-medium text-[#240046]">
+                <label htmlFor="userActiveChk" className="font-medium text-[#3B1A26]">
                   Account Active (Allow Login)
                 </label>
               </div>
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E9D5FF]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#F1D3DC]">
                 <button
                   type="button"
                   onClick={() => setShowUserForm(false)}
-                  className="px-4 py-2 rounded-lg border border-[#D8B4FE] bg-white hover:bg-[#FAF5FF] text-[#3B0764] font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-lg border border-[#ECC5D0] bg-white hover:bg-[#FDF2F5] text-[#8F2B4B] font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white font-semibold cursor-pointer shadow-xs"
+                  className="px-4 py-2 rounded-lg gold-ribbon-btn text-white font-semibold cursor-pointer shadow-xs"
                 >
                   {editingUser ? 'Update User' : 'Create User'}
                 </button>
@@ -1228,14 +1225,14 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
       {/* MODAL 2: ADMIN-ONLY DATABASE ROW EDIT MODAL                         */}
       {/* =================================================================== */}
       {editingDbRow && isCurrentUserAdmin && (
-        <div className="fixed inset-0 z-50 bg-[#1E0538]/55 backdrop-blur-[1px] flex items-center justify-center p-4">
-          <div className="bg-white border border-[#E9D5FF] rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 yajur-banner flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-[#4A1426]/55 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="bg-white border border-[#F1D3DC] rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 rose-banner flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white font-mono">
                   Edit Row · production.{selectedTable}
                 </h3>
-                <p className="text-[11px] text-purple-100 mt-0.5">
+                <p className="text-[11px] text-[#FBDDE2] mt-0.5">
                   Changes will update both SQLite (production.db) and PostgreSQL (production)
                 </p>
               </div>
@@ -1263,9 +1260,9 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                       key={col.name}
                       className={isLongText ? 'md:col-span-2' : ''}
                     >
-                      <label className="block text-xs font-mono font-bold text-[#3B0764] mb-1">
+                      <label className="block text-xs font-mono font-bold text-[#8F2B4B] mb-1">
                         {col.name}{' '}
-                        <span className="text-[10px] font-normal text-[#6B21A8]">
+                        <span className="text-[10px] font-normal text-[#7A4B5B]">
                           ({col.type}{col.pk ? ' · PK' : ''})
                         </span>
                       </label>
@@ -1280,7 +1277,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                               [col.name]: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 text-xs font-mono border border-[#D8B4FE] rounded-lg bg-white text-[#1E0538] disabled:bg-[#FAF5FF] focus:outline-none focus:border-[#9D174D]"
+                          className="w-full px-3 py-2 text-xs font-mono border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] disabled:bg-[#FDF2F5] focus:outline-none focus:border-[#C14468]"
                         />
                       ) : (
                         <input
@@ -1293,7 +1290,7 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                               [col.name]: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 text-xs font-mono border border-[#D8B4FE] rounded-lg bg-white text-[#1E0538] disabled:bg-[#FAF5FF] focus:outline-none focus:border-[#9D174D]"
+                          className="w-full px-3 py-2 text-xs font-mono border border-[#ECC5D0] rounded-lg bg-[#FFFDF9] text-[#3B1A26] disabled:bg-[#FDF2F5] focus:outline-none focus:border-[#C14468]"
                         />
                       )}
                     </div>
@@ -1301,18 +1298,18 @@ export const AdminConsole: React.FC<AdminConsoleProps> = ({
                 })}
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#E9D5FF]">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#F1D3DC]">
                 <button
                   type="button"
                   onClick={() => setEditingDbRow(null)}
-                  className="px-4 py-2 rounded-lg border border-[#D8B4FE] bg-white hover:bg-[#FAF5FF] text-xs font-semibold text-[#3B0764] cursor-pointer"
+                  className="px-4 py-2 rounded-lg border border-[#ECC5D0] bg-white hover:bg-[#FDF2F5] text-xs font-semibold text-[#8F2B4B] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingDbRow}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#3B0764] hover:bg-[#4C1D95] text-white text-xs font-semibold cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg gold-ribbon-btn text-white text-xs font-semibold cursor-pointer shadow-xs"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {savingDbRow ? 'Saving...' : 'Save Row Changes'}
