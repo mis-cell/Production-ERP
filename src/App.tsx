@@ -240,9 +240,74 @@ const JuteEmblem: React.FC<{ className?: string; variant?: 'light' | 'dark' }> =
   );
 };
 
+const SESSION_STORAGE_KEY = 'bjm_active_session_v1';
+
+interface StoredSessionPayload {
+  user: UserSession;
+  permissions: EffectivePermission[];
+  activeModuleKey: string;
+  viewMode: 'form' | 'report' | 'admin';
+  lastActivityAt: number;
+}
+
+function loadStoredSession(): { session: StoredSessionPayload | null; expired: boolean } {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return { session: null, expired: false };
+    const parsed = JSON.parse(raw) as Partial<StoredSessionPayload>;
+    if (!parsed || !parsed.user || !parsed.user.id || !parsed.lastActivityAt) {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      return { session: null, expired: false };
+    }
+    if (Date.now() - Number(parsed.lastActivityAt) >= SESSION_TIMEOUT_MS) {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
+      return { session: null, expired: true };
+    }
+    return {
+      session: {
+        user: parsed.user,
+        permissions: Array.isArray(parsed.permissions) ? parsed.permissions : [],
+        activeModuleKey: parsed.activeModuleKey || 'carding',
+        viewMode:
+          parsed.viewMode === 'report' || parsed.viewMode === 'admin' ? parsed.viewMode : 'form',
+        lastActivityAt: Number(parsed.lastActivityAt),
+      },
+      expired: false,
+    };
+  } catch {
+    return { session: null, expired: false };
+  }
+}
+
+function saveStoredSession(payload: StoredSessionPayload) {
+  try {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore storage quota / privacy mode error
+  }
+}
+
+function clearStoredSession() {
+  try {
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export default function App() {
-  const [user, setUser] = useState<UserSession | null>(null);
-  const [permissions, setPermissions] = useState<EffectivePermission[]>([]);
+  const initialStoredRef = useRef<{ session: StoredSessionPayload | null; expired: boolean } | null>(
+    null
+  );
+  if (initialStoredRef.current === null) {
+    initialStoredRef.current = loadStoredSession();
+  }
+  const initialStored = initialStoredRef.current;
+
+  const [user, setUser] = useState<UserSession | null>(() => initialStored.session?.user || null);
+  const [permissions, setPermissions] = useState<EffectivePermission[]>(
+    () => initialStored.session?.permissions || []
+  );
 
   // Login Form State
   const [loginUsername, setLoginUsername] = useState(() => {
@@ -261,8 +326,12 @@ export default function App() {
   const [heroImgFailed, setHeroImgFailed] = useState(false);
 
   // Main Workspace View Mode: 'form' | 'report' | 'admin'
-  const [viewMode, setViewMode] = useState<'form' | 'report' | 'admin'>('form');
-  const [activeModuleKey, setActiveModuleKey] = useState<string>('carding');
+  const [viewMode, setViewMode] = useState<'form' | 'report' | 'admin'>(
+    () => initialStored.session?.viewMode || 'form'
+  );
+  const [activeModuleKey, setActiveModuleKey] = useState<string>(
+    () => initialStored.session?.activeModuleKey || 'carding'
+  );
   const [reportDeptFilter, setReportDeptFilter] = useState<string>('all');
   const [adminTab, setAdminTab] = useState<'users' | 'roles' | 'database'>('users');
   const [adminTableFilter, setAdminTableFilter] = useState<string>('');
@@ -279,9 +348,25 @@ export default function App() {
   const [maintenancePopup, setMaintenancePopup] = useState<string | null>(null);
 
   // 15-Minute Session Timeout State & Activity Trackers
-  const [sessionExpiredPopup, setSessionExpiredPopup] = useState<string | null>(null);
-  const lastActivityRef = useRef<number>(Date.now());
+  const [sessionExpiredPopup, setSessionExpiredPopup] = useState<string | null>(() =>
+    initialStored.expired
+      ? `Your session has expired after ${SESSION_TIMEOUT_MINUTES} minutes of inactivity. Please sign in again to continue.`
+      : null
+  );
+  const lastActivityRef = useRef<number>(initialStored.session?.lastActivityAt || Date.now());
   const lastHeartbeatRef = useRef<number>(0);
+
+  // Keep persisted session synced whenever user, permissions, module, or view changes
+  useEffect(() => {
+    if (!user) return;
+    saveStoredSession({
+      user,
+      permissions,
+      activeModuleKey,
+      viewMode,
+      lastActivityAt: lastActivityRef.current,
+    });
+  }, [user, permissions, activeModuleKey, viewMode]);
 
   const expireUserSession = useCallback(
     (customMessage?: string) => {
@@ -293,6 +378,7 @@ export default function App() {
           body: JSON.stringify({ userId: uid }),
         }).catch(() => {});
       }
+      clearStoredSession();
       setUser(null);
       setPermissions([]);
       setSessionExpiredPopup(
@@ -307,6 +393,16 @@ export default function App() {
     if (!user) return;
     const now = Date.now();
     lastActivityRef.current = now;
+    try {
+      const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed.lastActivityAt = now;
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(parsed));
+      }
+    } catch {
+      // ignore
+    }
     if (now - lastHeartbeatRef.current >= 60000) {
       lastHeartbeatRef.current = now;
       fetch('/api/auth/heartbeat', {
@@ -324,11 +420,60 @@ export default function App() {
     }
   }, [user, expireUserSession]);
 
-  // Enforce 15-minute inactivity timeout across main portal + all 16 form iframes
+  // Verify restored session against server once on page reload (keeps session alive for 15 min)
+  const restoredCheckedRef = useRef(false);
+  useEffect(() => {
+    if (restoredCheckedRef.current || !initialStored.session?.user?.id) return;
+    restoredCheckedRef.current = true;
+    const uid = initialStored.session.user.id;
+    fetch(`/api/auth/session/${uid}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.ok && data.sessionExpired) {
+          expireUserSession(data.error);
+          return;
+        }
+        if (!data.ok && data.maintenance) {
+          const msg =
+            data.error || 'Server is under maintenance. We will be back shortly.';
+          clearStoredSession();
+          setMaintenanceActive(true);
+          setMaintenanceMessage(msg);
+          setUser(null);
+          setPermissions([]);
+          setMaintenancePopup(msg);
+          return;
+        }
+        if (!data.ok) {
+          clearStoredSession();
+          setUser(null);
+          setPermissions([]);
+          return;
+        }
+        const now = Date.now();
+        lastActivityRef.current = now;
+        lastHeartbeatRef.current = now;
+        setUser(data.user);
+        setPermissions(data.permissions || []);
+        if (data.maintenance) {
+          setMaintenanceActive(Boolean(data.maintenance.active));
+          setMaintenanceMessage(
+            data.maintenance.message || 'Server is under maintenance. We will be back shortly.'
+          );
+        }
+      })
+      .catch(() => {
+        // Keep locally restored session if brief network blip during reload
+      });
+  }, [initialStored, expireUserSession]);
+
+  // Enforce 15-minute inactivity timeout across main portal + all 16 form iframes + browser tabs
   useEffect(() => {
     if (!user) return;
-    lastActivityRef.current = Date.now();
-    lastHeartbeatRef.current = Date.now();
+    if (Date.now() - lastActivityRef.current >= SESSION_TIMEOUT_MS) {
+      expireUserSession();
+      return;
+    }
 
     let throttleTs = 0;
     const onActivity = () => {
@@ -349,6 +494,17 @@ export default function App() {
     events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }));
 
     const checkExpiry = () => {
+      try {
+        const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.lastActivityAt && Number(parsed.lastActivityAt) > lastActivityRef.current) {
+            lastActivityRef.current = Number(parsed.lastActivityAt);
+          }
+        }
+      } catch {
+        // ignore
+      }
       if (Date.now() - lastActivityRef.current >= SESSION_TIMEOUT_MS) {
         expireUserSession();
       }
@@ -360,14 +516,22 @@ export default function App() {
         checkExpiry();
       }
     };
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key === SESSION_STORAGE_KEY && !ev.newValue) {
+        setUser(null);
+        setPermissions([]);
+      }
+    };
     window.addEventListener('focus', checkExpiry);
     document.addEventListener('visibilitychange', onResume);
+    window.addEventListener('storage', onStorage);
 
     return () => {
       clearInterval(timer);
       events.forEach((ev) => window.removeEventListener(ev, onActivity));
       window.removeEventListener('focus', checkExpiry);
       document.removeEventListener('visibilitychange', onResume);
+      window.removeEventListener('storage', onStorage);
     };
   }, [user, recordUserActivity, expireUserSession]);
 
@@ -390,6 +554,7 @@ export default function App() {
               user.roleName.toLowerCase() === 'super admin'
           );
           if (!isAdminUser) {
+            clearStoredSession();
             setUser(null);
             setPermissions([]);
             setMaintenancePopup(msg);
@@ -436,6 +601,7 @@ export default function App() {
       if (ev.data.type === 'BJM_MAINTENANCE_ACTIVE') {
         const msg =
           ev.data.message || 'Server is under maintenance. We will be back shortly.';
+        clearStoredSession();
         setMaintenanceActive(true);
         setMaintenanceMessage(msg);
         setUser(null);
@@ -513,16 +679,25 @@ export default function App() {
           data.maintenance.message || 'Server is under maintenance. We will be back shortly.'
         );
       }
-      lastActivityRef.current = Date.now();
-      lastHeartbeatRef.current = Date.now();
+      const now = Date.now();
+      lastActivityRef.current = now;
+      lastHeartbeatRef.current = now;
       setSessionExpiredPopup(null);
-      setUser(data.user);
-      setPermissions(data.permissions || []);
 
       const firstAllowed = (data.permissions || []).find((p: EffectivePermission) => p.canView);
-      if (firstAllowed) {
-        setActiveModuleKey(firstAllowed.moduleKey);
-      }
+      const nextModuleKey = firstAllowed ? firstAllowed.moduleKey : 'carding';
+
+      saveStoredSession({
+        user: data.user,
+        permissions: data.permissions || [],
+        activeModuleKey: nextModuleKey,
+        viewMode: 'form',
+        lastActivityAt: now,
+      });
+
+      setUser(data.user);
+      setPermissions(data.permissions || []);
+      setActiveModuleKey(nextModuleKey);
       setViewMode('form');
     } catch (err: any) {
       setLoginError(err.message || 'Server connection error');
@@ -543,6 +718,7 @@ export default function App() {
       if (!data.ok && data.maintenance) {
         const msg =
           data.error || 'Server is under maintenance. We will be back shortly.';
+        clearStoredSession();
         setMaintenanceActive(true);
         setMaintenanceMessage(msg);
         setUser(null);
@@ -568,6 +744,7 @@ export default function App() {
         body: JSON.stringify({ userId: user.id }),
       }).catch(() => {});
     }
+    clearStoredSession();
     setUser(null);
     setPermissions([]);
   };
