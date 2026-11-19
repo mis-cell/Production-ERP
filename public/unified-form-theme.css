@@ -1,0 +1,635 @@
+/* ============================================================================
+   BJCL PRODUCTION PORTAL — SINGLE UNIFIED FORM STYLESHEET
+   Rose Pink Shades & Metallic Golden Ribbon Theme for ALL 16 Department Forms
+   ============================================================================ */
+
+:root {
+  /* Core BJCL Rose Pink & Metallic Gold Palette */
+  --bjm-cream: #FBF7ED;
+  --bjm-rose-deep: #8F2B4B;
+  --bjm-rose-velvet: #751E3B;
+  --bjm-rose-primary: #C14468;
+  --bjm-rose-hover: #A63556;
+  --bjm-rose-mauve: #CB798D;
+  --bjm-rose-coral: #EBACAC;
+  --bjm-rose-petal: #F8C6D0;
+  --bjm-rose-blossom: #FBDDE2;
+  --bjm-rose-tint: #FDF2F5;
+  --bjm-rose-border: #F1D3DC;
+  --bjm-rose-input-border: #ECC5D0;
+  --bjm-ink: #3B1A26;
+  --bjm-muted: #7A4B5B;
+  --bjm-gold-1: #CC9D42;
+  --bjm-gold-2: #E2B760;
+  --bjm-gold-3: #F6D281;
+  --bjm-gold-4: #CD9E43;
+  --bjm-gold-text: #8C6418;
+  --bjm-gold-tint: #FDF6E7;
+  --bjm-danger: #B8294B;
+  --bjm-danger-dark: #931D3A;
+
+  /* Unified Overrides for ALL CSS Variables Across All 16 Department Forms */
+  --primary: #C14468 !important;
+  --primary-dark: #8F2B4B !important;
+  --navy: #8F2B4B !important;
+  --navy-dark: #751E3B !important;
+  --nav: #8F2B4B !important;
+  --nav-sub: #FBDDE2 !important;
+  --blue: #C14468 !important;
+  --blue-dark: #8F2B4B !important;
+  --blue-light: #FDF2F5 !important;
+  --pri: #C14468 !important;
+  --pri-d: #8F2B4B !important;
+  --accent: #CC9D42 !important;
+  --accent-dark: #A87C28 !important;
+  --acc: #C14468 !important;
+  --bg: #FBF7ED !important;
+  --paper: #FBF7ED !important;
+  --sheet: #FFFFFF !important;
+  --card: #FFFFFF !important;
+  --ink: #3B1A26 !important;
+  --text: #3B1A26 !important;
+  --text-dim: #7A4B5B !important;
+  --text-light: #7A4B5B !important;
+  --muted: #7A4B5B !important;
+  --mut: #7A4B5B !important;
+  --mute: #7A4B5B !important;
+  --border: #F1D3DC !important;
+  --line: #F1D3DC !important;
+  --line2: #F7E4EA !important;
+  --rule: #E4B7C4 !important;
+  --head: #FDF2F5 !important;
+  --headc: #FBDDE2 !important;
+  --soft: #FDF2F5 !important;
+  --calc: #FDF6E7 !important;
+  --green: #C14468 !important;
+  --green-dark: #8F2B4B !important;
+  --green-light: #FDF2F5 !important;
+  --ok: #C14468 !important;
+  --warn: #B88628 !important;
+  --warn-bg: #FDF6E7 !important;
+  --amber: #FDF6E7 !important;
+  --amber-light: #FDF6E7 !important;
+  --amber-border: #E2B760 !important;
+  --amber-text: #8C6418 !important;
+  --purple: #9C3A60 !important;
+  --purple-light: #FDF2F5 !important;
+  --red: #B8294B !important;
+  --red-light: #FDF0F3 !important;
+  --bad: #B8294B !important;
+  --danger: #B8294B !important;
+  --danger-dark: #931D3A !important;
+  --success: #C14468 !important;
+  --serial: #A63556 !important;
+  --shadow: 0 4px 18px -6px rgba(143, 43, 75, 0.10) !important;
+}
+
+/* ============================================================================
+   1. BASE PAGE CANVAS & TYPOGRAPHY
+   ============================================================================ */
+html,
+body {
+  background-color: #FBF7ED !important;
+  background-image: none !important;
+  color: #3B1A26 !important;
+  font-family: 'DM Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Plus Jakarta Sans', 'DM Sans', system-ui, sans-serif !important;
+}
+
+/* Scrollbars matching main portal */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF1F4;
+}
+::-webkit-scrollbar-thumb {
+  background: #DFB1BE;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CB798D;
+}
+
+/* ============================================================================
+   2. UNIFIED TOP HEADERS & NAVIGATION BARS (ALL 16 FORMS)
+   ============================================================================ */
+html body header,
+html body .header,
+html body .topbar,
+html body header.topbar,
+html body header.top,
+html body .bg-\[\#1e2a5e\],
+html body .bg-blue-900,
+html body .bg-blue-950 {
+  background: linear-gradient(100deg, #8F2B4B 0%, #B33A5E 58%, #C14468 100%) !important;
+  color: #FFFFFF !important;
+  border-bottom: 3px solid #E2B760 !important;
+  box-shadow: 0 3px 14px rgba(117, 30, 59, 0.14) !important;
+}
+
+/* Header titles & subtitles */
+html body header h1,
+html body header .title,
+html body header .brand,
+html body header .brand h1,
+html body .header h1,
+html body .topbar .title,
+html body .topbar .brand,
+html body .topbar h1 {
+  color: #FFFFFF !important;
+}
+
+html body header small,
+html body header .sub,
+html body header .sub-label,
+html body header .mill,
+html body .header .sub-label,
+html body .topbar .brand small,
+html body .topbar small,
+html body .topbar .sub,
+html body header .text-blue-200,
+html body header .text-blue-100,
+html body .bg-\[\#1e2a5e\] .text-blue-200,
+html body .bg-\[\#1e2a5e\] .text-blue-100,
+html body .bg-blue-900 .text-blue-200,
+html body .bg-blue-900 .text-blue-100 {
+  color: #FBDDE2 !important;
+}
+
+/* Separate Tab Strips Below Header (Carding, Spinning, Spreader, VL Loom, Narrow Loom, S4 Beaming) */
+html body .tabs,
+html body nav.tabs,
+html body .navtabs,
+html body .bg-\[\#16204a\],
+html body .bg-blue-800 {
+  background: #78213D !important;
+  border-top: 1px solid rgba(246, 210, 129, 0.25) !important;
+  border-bottom: 2px solid #E2B760 !important;
+}
+
+/* When .tabs / nav is nested INSIDE header (e.g. Narrow/Pre Beaming, S4 Loom, Cutting, Damping, Hemming, Herackle, Lapping, Press, VL Beaming) */
+html body header nav,
+html body header .tabs,
+html body header nav.tabs,
+html body .topbar nav,
+html body .topbar .tabs,
+html body .topbar nav.tabs {
+  background: transparent !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Unselected Tab Buttons inside Headers & Nav Bars */
+html body header nav button,
+html body header .tabs button,
+html body .topbar nav button,
+html body .topbar .tabs button,
+html body .tabs button,
+html body nav.tabs button,
+html body .navtabs .navtab,
+html body .tab-btn {
+  color: #FBDDE2 !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  transition: all 0.15s ease !important;
+}
+
+html body header nav button:hover,
+html body header .tabs button:hover,
+html body .topbar nav button:hover,
+html body .topbar .tabs button:hover,
+html body .tabs button:hover,
+html body nav.tabs button:hover,
+html body .navtabs .navtab:hover,
+html body .tab-btn:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Active Tab Buttons — Underline Style (Carding, Narrow/Pre Beaming, Narrow Loom, S4 Beaming, S4 Loom, Spinning, Spreader, VL Beaming, VL Loom, Lapping) */
+html body .tabs button.active,
+html body nav.tabs button.active,
+html body .navtabs .navtab.active,
+html body .tab-btn.active,
+html body header nav button.active,
+html body header nav button.on {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-bottom: 3px solid #F6D281 !important;
+  font-weight: 700 !important;
+}
+
+/* Pill-Style Active Nav Buttons (Docs 2/3/4 Cutting/Damping/Hemming & Doc 5 Herackle & Doc 10 Press) */
+html body header > nav > button.active,
+html body header > nav > button.on {
+  background: linear-gradient(90deg, #CC9D42 0%, #E2B760 45%, #F6D281 100%) !important;
+  color: #4A1426 !important;
+  border-radius: 8px !important;
+  border-bottom: none !important;
+  box-shadow: 0 2px 8px rgba(74, 20, 38, 0.22) !important;
+  font-weight: 700 !important;
+}
+
+/* Carding Subtabs (.subtabs) */
+html body .subtabs {
+  background: #FDF2F5 !important;
+  border-bottom: 1px solid #F1D3DC !important;
+}
+html body .subtabs button {
+  color: #8F2B4B !important;
+  background: transparent !important;
+}
+html body .subtabs button:hover {
+  background: #FBDDE2 !important;
+}
+html body .subtabs button.active {
+  background: #FFFFFF !important;
+  color: #C14468 !important;
+  border-bottom: 3px solid #C14468 !important;
+  font-weight: 700 !important;
+}
+
+/* Carding Home / Back button inside dark header */
+html body .header .btn-back,
+html body header .btn-back {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(246, 210, 129, 0.5) !important;
+}
+html body .header .btn-back:hover,
+html body header .btn-back:hover {
+  background: rgba(255, 255, 255, 0.26) !important;
+}
+
+/* ============================================================================
+   3. CARDS, PANELS & SECTION HEADERS
+   ============================================================================ */
+html body .card,
+html body .panel,
+html body .box,
+html body .sheet,
+html body .form-card,
+html body .section-card {
+  background: #FFFFFF !important;
+  border: 1px solid #F1D3DC !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 18px -6px rgba(143, 43, 75, 0.08) !important;
+}
+
+html body .card h2,
+html body .card h3,
+html body .card h4,
+html body .panel h2,
+html body .panel h3,
+html body .section-title,
+html body .sec-title,
+html body .group-title,
+html body [style*="color:#152a63"],
+html body [style*="color: #152a63"],
+html body [style*="color:#123a63"],
+html body [style*="color: #123a63"],
+html body [style*="color:#1657b3"],
+html body [style*="color:#0d2b6b"] {
+  color: #8F2B4B !important;
+}
+
+html body [style*="border-top-color:#123a63"],
+html body [style*="border-top-color: #123a63"] {
+  border-top-color: #C14468 !important;
+  border-color: #F1D3DC !important;
+}
+
+html body label {
+  color: #542134 !important;
+}
+
+/* ============================================================================
+   4. FORM INPUTS, SELECTS & TEXTAREAS
+   ============================================================================ */
+html body input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+html body select,
+html body textarea {
+  background-color: #FFFDF9 !important;
+  border: 1px solid #ECC5D0 !important;
+  color: #3B1A26 !important;
+  border-radius: 8px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+html body input::placeholder,
+html body textarea::placeholder {
+  color: #B48A97 !important;
+}
+
+html body input:not([type="checkbox"]):not([type="radio"]):focus,
+html body select:focus,
+html body textarea:focus {
+  background-color: #FFFFFF !important;
+  border-color: #C14468 !important;
+  box-shadow: 0 0 0 3px rgba(226, 183, 96, 0.28) !important;
+  outline: none !important;
+}
+
+html body input[readonly],
+html body input.calc,
+html body .calc,
+html body td.calc {
+  background-color: #FDF6E7 !important;
+  color: #7A4B18 !important;
+  border-color: #EBD49E !important;
+}
+
+html body input[type="checkbox"],
+html body input[type="radio"] {
+  accent-color: #C14468 !important;
+}
+
+/* ============================================================================
+   5. TABLES — UNIFIED BLOSSOM HEADER & METALLIC GOLD ACCENT LINE
+   ============================================================================ */
+html body table {
+  border-color: #F1D3DC !important;
+}
+
+html body table thead,
+html body table thead tr {
+  background: #FDF2F5 !important;
+  background-color: #FDF2F5 !important;
+}
+
+html body table thead th,
+html body table th {
+  background: #FDF2F5 !important;
+  background-color: #FDF2F5 !important;
+  color: #8F2B4B !important;
+  border-color: #F1D3DC !important;
+  border-bottom: 2px solid #E2B760 !important;
+  font-weight: 700 !important;
+}
+
+html body table td {
+  border-color: #F5E1E7 !important;
+  color: #3B1A26 !important;
+}
+
+html body table tbody tr:hover {
+  background-color: #FFF8FA !important;
+}
+
+html body table tfoot td,
+html body table tfoot th,
+html body tr.total td,
+html body tr.tot td {
+  background-color: #FDF6E7 !important;
+  color: #6B213B !important;
+  font-weight: 700 !important;
+  border-top: 2px solid #E2B760 !important;
+}
+
+/* ============================================================================
+   6. UNIFIED ACTION BUTTONS (ROSE PINK PRIMARY, GOLDEN RIBBON SAVE, BLUSH SECONDARY)
+   ============================================================================ */
+
+/* Primary Save / Submit CTA Buttons -> Metallic Golden Ribbon */
+html body .btn-save,
+html body .btn-green,
+html body .btn.ok,
+html body button.btn.ok,
+html body .bg-green-600,
+html body .bg-green-700,
+html body button[type="submit"]:not(.ghost):not(.sec):not(.btn-clear) {
+  background: linear-gradient(90deg, #BA8B33 0%, #D9AC52 50%, #B8882F 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid #B58429 !important;
+  box-shadow: 0 3px 10px rgba(184, 136, 47, 0.24) !important;
+  font-weight: 700 !important;
+}
+html body .btn-save:hover,
+html body .btn-green:hover,
+html body .btn.ok:hover,
+html body button.btn.ok:hover,
+html body .bg-green-600:hover,
+html body .bg-green-700:hover,
+html body button[type="submit"]:not(.ghost):not(.sec):not(.btn-clear):hover {
+  background: linear-gradient(90deg, #A47826 0%, #C79A40 50%, #A27524 100%) !important;
+  color: #FFFFFF !important;
+}
+
+/* Standard Primary Action Buttons -> Deep Rose Crimson (#C14468) */
+html body .btn:not(.sec):not(.ghost):not(.bad):not(.danger):not(.btn-clear):not(.btn-ghost):not(.btn-outline):not(.btn-secondary):not(.btn-danger):not(.btn-stop):not(.btn-save):not(.btn-green):not(.ok),
+html body .btn-primary,
+html body .btn-blue,
+html body .btn-add,
+html body .btn-filter,
+html body .btn-purple,
+html body .btn-black,
+html body .add-row-btn,
+html body .b:not(.g):not(.r),
+html body .bg-blue-600,
+html body .bg-blue-700,
+html body button.bg-\[\#1e2a5e\],
+html body button.bg-blue-900,
+html body button.bg-blue-800 {
+  background: #C14468 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #A83457 !important;
+  box-shadow: 0 2px 8px rgba(193, 68, 104, 0.20) !important;
+  font-weight: 600 !important;
+}
+html body .btn:not(.sec):not(.ghost):not(.bad):not(.danger):not(.btn-clear):not(.btn-ghost):not(.btn-outline):not(.btn-secondary):not(.btn-danger):not(.btn-stop):not(.btn-save):not(.btn-green):not(.ok):hover,
+html body .btn-primary:hover,
+html body .btn-blue:hover,
+html body .btn-add:hover,
+html body .btn-filter:hover,
+html body .btn-purple:hover,
+html body .btn-black:hover,
+html body .add-row-btn:hover,
+html body .b:not(.g):not(.r):hover,
+html body .bg-blue-600:hover,
+html body .bg-blue-700:hover,
+html body button.bg-\[\#1e2a5e\]:hover,
+html body button.bg-blue-900:hover,
+html body button.bg-blue-800:hover {
+  background: #9E3053 !important;
+  color: #FFFFFF !important;
+}
+
+/* Secondary / Ghost / Clear / Outline Buttons -> Soft Blossom Rose */
+html body .btn-clear,
+html body .btn-outline,
+html body .btn-ghost,
+html body .btn-secondary,
+html body .btn.sec,
+html body .btn.ghost,
+html body .btn.secondary,
+html body button.ghost,
+html body .b.g,
+html body .chip {
+  background: #FDF2F5 !important;
+  color: #8F2B4B !important;
+  border: 1px solid #ECC5D0 !important;
+  box-shadow: none !important;
+}
+html body .btn-clear:hover,
+html body .btn-outline:hover,
+html body .btn-ghost:hover,
+html body .btn-secondary:hover,
+html body .btn.sec:hover,
+html body .btn.ghost:hover,
+html body .btn.secondary:hover,
+html body button.ghost:hover,
+html body .b.g:hover,
+html body .chip:hover {
+  background: #FBDDE2 !important;
+  color: #751E3B !important;
+}
+
+/* Active Chips / Filter Pills */
+html body .chip.on,
+html body .chip.active,
+html body .pill.active {
+  background: #C14468 !important;
+  color: #FFFFFF !important;
+  border-color: #C14468 !important;
+}
+
+/* Danger / Delete / Stop Buttons -> Deep Crimson Rose */
+html body .btn-danger,
+html body .btn-red,
+html body .btn-stop,
+html body .btn.bad,
+html body .b.r {
+  background: #B8294B !important;
+  color: #FFFFFF !important;
+  border: 1px solid #931D3A !important;
+}
+html body .btn-danger:hover,
+html body .btn-red:hover,
+html body .btn-stop:hover,
+html body .btn.bad:hover,
+html body .b.r:hover {
+  background: #931D3A !important;
+  color: #FFFFFF !important;
+}
+
+html body button.danger {
+  background: #FDF0F3 !important;
+  color: #B8294B !important;
+  border: 1px solid #E9B0BF !important;
+}
+html body button.danger:hover {
+  background: #FBDDE2 !important;
+}
+
+/* ============================================================================
+   7. TAILWIND CDN UTILITY COLOR OVERRIDES (DOCS 8 NARROW LOOM & 11 S4 BEAMING)
+   ============================================================================ */
+html body .bg-gray-100,
+html body .bg-slate-100 {
+  background-color: #FBF7ED !important;
+}
+html body .bg-gray-50,
+html body .bg-slate-50 {
+  background-color: #FFFDF9 !important;
+}
+html body .bg-blue-50,
+html body .bg-indigo-50 {
+  background-color: #FDF2F5 !important;
+}
+html body .bg-blue-100,
+html body .bg-indigo-100 {
+  background-color: #FBDDE2 !important;
+}
+html body .bg-green-50 {
+  background-color: #FDF6E7 !important;
+}
+html body .bg-green-100 {
+  background-color: #F9EBC8 !important;
+}
+
+html body .text-\[\#1e2a5e\],
+html body .text-blue-900,
+html body .text-blue-800,
+html body .text-indigo-900 {
+  color: #8F2B4B !important;
+}
+html body .text-blue-700,
+html body .text-blue-600,
+html body .text-indigo-700 {
+  color: #C14468 !important;
+}
+html body .text-green-700,
+html body .text-green-600 {
+  color: #8C6418 !important;
+}
+html body .text-gray-700,
+html body .text-slate-700 {
+  color: #542134 !important;
+}
+html body .text-gray-600,
+html body .text-gray-500,
+html body .text-slate-500 {
+  color: #7A4B5B !important;
+}
+
+html body .border-\[\#1e2a5e\],
+html body .border-blue-900 {
+  border-color: #C14468 !important;
+}
+html body .border-blue-300,
+html body .border-blue-200,
+html body .border-gray-200,
+html body .border-gray-300 {
+  border-color: #F1D3DC !important;
+}
+html body .border-green-300,
+html body .border-green-200 {
+  border-color: #E2B760 !important;
+}
+
+/* Status badges, info banners & alerts inside forms */
+html body .badge,
+html body .status-badge,
+html body .pill,
+html body .tag {
+  border-color: #F1D3DC !important;
+}
+html body .kpi,
+html body .stat-card,
+html body .summary-card,
+html body .metric-box {
+  background: #FFFFFF !important;
+  border: 1px solid #F1D3DC !important;
+  border-top: 3px solid #E2B760 !important;
+  border-radius: 10px !important;
+}
+html body .kpi .val,
+html body .stat-card .val,
+html body .metric-box .val {
+  color: #8F2B4B !important;
+}
+
+/* Ensure header buttons in Tailwind forms (Doc 8 & 11) keep clean contrast */
+html body header button.tab-btn,
+html body .bg-\[\#1e2a5e\] button.tab-btn,
+html body .bg-blue-900 button.tab-btn {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 3px solid transparent !important;
+  box-shadow: none !important;
+  color: #FBDDE2 !important;
+}
+html body header button.tab-btn.active,
+html body .bg-\[\#1e2a5e\] button.tab-btn.active,
+html body .bg-blue-900 button.tab-btn.active {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-bottom: 3px solid #F6D281 !important;
+  color: #FFFFFF !important;
+}

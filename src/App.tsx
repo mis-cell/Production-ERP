@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   FileText,
   BarChart3,
@@ -18,10 +18,14 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
+  Clock,
 } from 'lucide-react';
 import { UserSession, EffectivePermission, ModuleMeta } from './types';
 import { AdminConsole } from './components/AdminConsole';
 import { ReportSection } from './components/ReportSection';
+
+const SESSION_TIMEOUT_MINUTES = 15;
+const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
 
 // Listed in exact 1..16 order matching the 16 forms in the source file
 const ALL_MODULES: ModuleMeta[] = [
@@ -274,6 +278,99 @@ export default function App() {
   );
   const [maintenancePopup, setMaintenancePopup] = useState<string | null>(null);
 
+  // 15-Minute Session Timeout State & Activity Trackers
+  const [sessionExpiredPopup, setSessionExpiredPopup] = useState<string | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
+  const lastHeartbeatRef = useRef<number>(0);
+
+  const expireUserSession = useCallback(
+    (customMessage?: string) => {
+      const uid = user?.id;
+      if (uid) {
+        fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: uid }),
+        }).catch(() => {});
+      }
+      setUser(null);
+      setPermissions([]);
+      setSessionExpiredPopup(
+        customMessage ||
+          `Your session has expired after ${SESSION_TIMEOUT_MINUTES} minutes of inactivity. Please sign in again to continue.`
+      );
+    },
+    [user]
+  );
+
+  const recordUserActivity = useCallback(() => {
+    if (!user) return;
+    const now = Date.now();
+    lastActivityRef.current = now;
+    if (now - lastHeartbeatRef.current >= 60000) {
+      lastHeartbeatRef.current = now;
+      fetch('/api/auth/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data && data.ok === false && data.sessionExpired) {
+            expireUserSession(data.error);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user, expireUserSession]);
+
+  // Enforce 15-minute inactivity timeout across main portal + all 16 form iframes
+  useEffect(() => {
+    if (!user) return;
+    lastActivityRef.current = Date.now();
+    lastHeartbeatRef.current = Date.now();
+
+    let throttleTs = 0;
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - throttleTs < 3000) return;
+      throttleTs = now;
+      recordUserActivity();
+    };
+
+    const events: (keyof WindowEventMap)[] = [
+      'mousemove',
+      'mousedown',
+      'keydown',
+      'click',
+      'scroll',
+      'touchstart',
+    ];
+    events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }));
+
+    const checkExpiry = () => {
+      if (Date.now() - lastActivityRef.current >= SESSION_TIMEOUT_MS) {
+        expireUserSession();
+      }
+    };
+
+    const timer = setInterval(checkExpiry, 5000);
+    const onResume = () => {
+      if (document.visibilityState === 'visible') {
+        checkExpiry();
+      }
+    };
+    window.addEventListener('focus', checkExpiry);
+    document.addEventListener('visibilitychange', onResume);
+
+    return () => {
+      clearInterval(timer);
+      events.forEach((ev) => window.removeEventListener(ev, onActivity));
+      window.removeEventListener('focus', checkExpiry);
+      document.removeEventListener('visibilitychange', onResume);
+    };
+  }, [user, recordUserActivity, expireUserSession]);
+
   const checkMaintenanceStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/system/maintenance');
@@ -327,7 +424,16 @@ export default function App() {
 
   useEffect(() => {
     const onMessage = (ev: MessageEvent) => {
-      if (ev.data && ev.data.type === 'BJM_MAINTENANCE_ACTIVE') {
+      if (!ev.data) return;
+      if (ev.data.type === 'BJM_USER_ACTIVITY') {
+        recordUserActivity();
+        return;
+      }
+      if (ev.data.type === 'BJM_SESSION_EXPIRED') {
+        expireUserSession(ev.data.message);
+        return;
+      }
+      if (ev.data.type === 'BJM_MAINTENANCE_ACTIVE') {
         const msg =
           ev.data.message || 'Server is under maintenance. We will be back shortly.';
         setMaintenanceActive(true);
@@ -339,7 +445,7 @@ export default function App() {
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, []);
+  }, [recordUserActivity, expireUserSession]);
 
   const handleToggleMaintenance = async (nextActive: boolean, customMsg?: string) => {
     if (!user) return;
@@ -407,6 +513,9 @@ export default function App() {
           data.maintenance.message || 'Server is under maintenance. We will be back shortly.'
         );
       }
+      lastActivityRef.current = Date.now();
+      lastHeartbeatRef.current = Date.now();
+      setSessionExpiredPopup(null);
       setUser(data.user);
       setPermissions(data.permissions || []);
 
@@ -427,6 +536,10 @@ export default function App() {
     try {
       const res = await fetch(`/api/auth/session/${user.id}`);
       const data = await res.json();
+      if (!data.ok && data.sessionExpired) {
+        expireUserSession(data.error);
+        return;
+      }
       if (!data.ok && data.maintenance) {
         const msg =
           data.error || 'Server is under maintenance. We will be back shortly.';
@@ -438,18 +551,57 @@ export default function App() {
         return;
       }
       if (data.ok) {
+        lastActivityRef.current = Date.now();
         setUser(data.user);
         setPermissions(data.permissions || []);
       }
     } catch {
       // ignore
     }
-  }, [user]);
+  }, [user, expireUserSession]);
 
   const handleLogout = () => {
+    if (user?.id) {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      }).catch(() => {});
+    }
     setUser(null);
     setPermissions([]);
   };
+
+  const sessionExpiredModalNode = sessionExpiredPopup ? (
+    <div className="fixed inset-0 z-99999 flex items-center justify-center bg-[#4A1426]/65 backdrop-blur-xs p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-[#F1D3DC] overflow-hidden">
+        <div className="px-6 py-4 flex items-center gap-3 text-white rose-banner">
+          <div className="p-2 rounded-xl bg-white/15">
+            <Clock className="w-6 h-6 text-[#F6D281]" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold tracking-wide text-white">
+              Session Timed Out
+            </h3>
+            <p className="text-[11px] text-[#FBDDE2] font-medium">
+              {SESSION_TIMEOUT_MINUTES}-Minute Security Timeout
+            </p>
+          </div>
+        </div>
+        <div className="p-6 text-center space-y-4">
+          <div className="p-4 rounded-xl bg-[#FDF2F5] border border-[#F8C6D0] text-[#3B1A26] text-sm font-bold leading-relaxed">
+            {sessionExpiredPopup}
+          </div>
+          <button
+            onClick={() => setSessionExpiredPopup(null)}
+            className="w-full py-2.5 rounded-xl gold-ribbon-btn text-xs font-bold tracking-wide cursor-pointer shadow-sm"
+          >
+            Sign In Again
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   const maintenanceModalNode = maintenancePopup ? (
     <div className="fixed inset-0 z-99999 flex items-center justify-center bg-[#4A1426]/65 backdrop-blur-xs p-4">
@@ -492,6 +644,7 @@ export default function App() {
     return (
       <div className="h-screen min-h-[580px] w-full flex flex-row items-stretch bg-[#FBF7ED] text-[#3B1A26] overflow-hidden relative">
         {maintenanceModalNode}
+        {sessionExpiredModalNode}
 
         {/* LEFT HERO PANEL: Rose-Tinted Sunlit Jute Mill & Golden Ribbon S-Curve Wave */}
         <div className="hidden min-[540px]:block relative w-[48%] md:w-[52%] h-full overflow-hidden shrink-0 bg-[#F8C6D0]">

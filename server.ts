@@ -70,6 +70,39 @@ async function startServer() {
     res.status(204).end();
   });
 
+  // Serve single unified Rose Pink & Golden Ribbon stylesheet for all 16 department forms
+  app.get('/unified-form-theme.css', (_req, res) => {
+    const cssPath = path.resolve(process.cwd(), 'public/unified-form-theme.css');
+    if (fs.existsSync(cssPath)) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.sendFile(cssPath);
+      return;
+    }
+    res.status(404).type('text/css').send('/* unified-form-theme.css not found */');
+  });
+
+  // 15-Minute Inactivity Session Timeout Tracker
+  const SESSION_TIMEOUT_MINUTES = 15;
+  const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
+  const userSessionActivity = new Map<number, number>();
+
+  const touchUserSession = (userId: number) => {
+    if (!Number.isFinite(userId) || userId <= 0) return;
+    userSessionActivity.set(userId, Date.now());
+  };
+
+  const isUserSessionExpired = (userId: number): boolean => {
+    if (!Number.isFinite(userId) || userId <= 0) return false;
+    const lastActive = userSessionActivity.get(userId);
+    if (lastActive === undefined) return false;
+    if (Date.now() - lastActive > SESSION_TIMEOUT_MS) {
+      userSessionActivity.delete(userId);
+      return true;
+    }
+    return false;
+  };
+
   // ==========================================================================
   // 1. AUTHENTICATION, SESSION & MAINTENANCE MODE ROUTES
   // ==========================================================================
@@ -166,9 +199,11 @@ async function startServer() {
     syncSqliteTablesToPostgres(db, ['users', 'audit_logs']).catch(() => {});
 
     const permissions = getUserEffectivePermissions(user.id);
+    touchUserSession(user.id);
 
     res.json({
       ok: true,
+      sessionTimeoutMinutes: SESSION_TIMEOUT_MINUTES,
       user: {
         id: user.id,
         username: user.username,
@@ -184,8 +219,46 @@ async function startServer() {
     });
   });
 
+  app.post('/api/auth/heartbeat', (req, res) => {
+    const userId = Number(req.body?.userId || 0);
+    if (!userId) {
+      res.status(400).json({ ok: false, error: 'Missing userId.' });
+      return;
+    }
+    if (isUserSessionExpired(userId)) {
+      res.status(401).json({
+        ok: false,
+        sessionExpired: true,
+        error: 'Your session has expired after 15 minutes of inactivity. Please sign in again.',
+      });
+      return;
+    }
+    touchUserSession(userId);
+    res.json({
+      ok: true,
+      sessionTimeoutMinutes: SESSION_TIMEOUT_MINUTES,
+      expiresAt: Date.now() + SESSION_TIMEOUT_MS,
+    });
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    const userId = Number(req.body?.userId || 0);
+    if (userId > 0) {
+      userSessionActivity.delete(userId);
+    }
+    res.json({ ok: true });
+  });
+
   app.get('/api/auth/session/:userId', (req, res) => {
     const userId = Number(req.params.userId);
+    if (isUserSessionExpired(userId)) {
+      res.status(401).json({
+        ok: false,
+        sessionExpired: true,
+        error: 'Your session has expired after 15 minutes of inactivity. Please sign in again.',
+      });
+      return;
+    }
     const user = db.prepare(`
       SELECT u.*, r.name as role_name, r.is_admin
       FROM users u
@@ -214,8 +287,10 @@ async function startServer() {
       return;
     }
 
+    touchUserSession(user.id);
     res.json({
       ok: true,
+      sessionTimeoutMinutes: SESSION_TIMEOUT_MINUTES,
       user: {
         id: user.id,
         username: user.username,
@@ -1005,6 +1080,16 @@ async function startServer() {
     const { moduleKey } = req.params;
     const { fnName, args = [], userId = 1 } = req.body || {};
 
+    const userIdNum = Number(userId);
+    if (isUserSessionExpired(userIdNum)) {
+      res.status(401).json({
+        ok: false,
+        sessionExpired: true,
+        error: 'Your session has expired after 15 minutes of inactivity. Please sign in again.',
+      });
+      return;
+    }
+
     const user = db
       .prepare(
         `SELECT u.id, u.username, u.full_name, r.name as role_name, r.is_admin
@@ -1012,7 +1097,7 @@ async function startServer() {
          JOIN roles r ON r.id = u.role_id
          WHERE u.id = ?`
       )
-      .get(Number(userId)) as any;
+      .get(userIdNum) as any;
 
     const isUserAdmin =
       Boolean(user?.is_admin) ||
@@ -1027,6 +1112,10 @@ async function startServer() {
         error: maintenance.message || 'Server is under maintenance. We will be back shortly.',
       });
       return;
+    }
+
+    if (user?.id) {
+      touchUserSession(user.id);
     }
 
     const userContext = user
@@ -1046,7 +1135,7 @@ async function startServer() {
   });
 
   // ==========================================================================
-  // 5. EXACT DEPARTMENT HTML RENDERER ("Same As It Is" + SSO + DB Bridge)
+  // 5. DEPARTMENT HTML RENDERER (Single Unified Theme + SSO + DB Bridge)
   // ==========================================================================
   app.get('/api/modules/:moduleKey/render', (req, res) => {
     const { moduleKey } = req.params;
@@ -1055,6 +1144,24 @@ async function startServer() {
     const mod = MODULES.find((m) => m.key === moduleKey);
     if (!mod) {
       res.status(404).send('Module not found');
+      return;
+    }
+
+    if (isUserSessionExpired(userId)) {
+      res.status(401).send(`
+        <!DOCTYPE html>
+        <html>
+          <body style="font-family: 'DM Sans', system-ui, sans-serif; padding: 4rem 2rem; text-align: center; color: #3B1A26; background: #FBF7ED;">
+            <script>
+              try {
+                window.parent.postMessage({ type: 'BJM_SESSION_EXPIRED', message: 'Your session has expired after 15 minutes of inactivity. Please sign in again.' }, '*');
+              } catch (e) {}
+            </script>
+            <h2 style="color: #8F2B4B; margin-bottom: 0.5rem;">Session Expired</h2>
+            <p style="font-weight: 600; color: #7A4B5B;">Your 15-minute session has timed out. Please sign in again.</p>
+          </body>
+        </html>
+      `);
       return;
     }
 
@@ -1075,18 +1182,22 @@ async function startServer() {
       res.status(503).send(`
         <!DOCTYPE html>
         <html>
-          <body style="font-family: 'Inter', system-ui, sans-serif; padding: 4rem 2rem; text-align: center; color: #1E1B4B; background: #FFF7ED;">
+          <body style="font-family: 'DM Sans', system-ui, sans-serif; padding: 4rem 2rem; text-align: center; color: #3B1A26; background: #FBF7ED;">
             <script>
               try {
                 window.parent.postMessage({ type: 'BJM_MAINTENANCE_ACTIVE', message: ${JSON.stringify(maintenance.message)} }, '*');
               } catch (e) {}
             </script>
-            <h2 style="color: #C2410C; margin-bottom: 0.5rem;">Server Under Maintenance</h2>
-            <p style="font-weight: 600;">${maintenance.message}</p>
+            <h2 style="color: #8F2B4B; margin-bottom: 0.5rem;">Server Under Maintenance</h2>
+            <p style="font-weight: 600; color: #7A4B5B;">${maintenance.message}</p>
           </body>
         </html>
       `);
       return;
+    }
+
+    if (user?.id) {
+      touchUserSession(user.id);
     }
 
     const perms = getUserEffectivePermissions(user?.id || 1);
@@ -1102,9 +1213,9 @@ async function startServer() {
       res.status(403).send(`
         <!DOCTYPE html>
         <html>
-          <body style="font-family: 'Inter', system-ui, sans-serif; padding: 3rem; text-align: center; color: #0F172A; background: #F8FAFC;">
-            <h2>Access Restricted</h2>
-            <p>Your account does not have View permission for ${mod.name}.</p>
+          <body style="font-family: 'DM Sans', system-ui, sans-serif; padding: 3rem; text-align: center; color: #3B1A26; background: #FBF7ED;">
+            <h2 style="color: #8F2B4B;">Access Restricted</h2>
+            <p style="color: #7A4B5B;">Your account does not have View permission for ${mod.name}.</p>
           </body>
         </html>
       `);
@@ -1145,8 +1256,12 @@ async function startServer() {
 
     const bridgeScript = `
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+<link id="bjm-unified-theme" rel="stylesheet" href="/unified-form-theme.css" />
 <style>
-  /* Preserve 100% Original Theme of all 16 Department Forms while hiding internal login, logout, helper text & individual report tabs */
+  /* Hide internal login, logout, helper text & individual report tabs across all 16 forms */
   #page-login, #loginScreen, .login-box, .login-wrap, .login-card,
   .btn-logout, .logout-btn, #logoutBtn, button[onclick*="doLogout"], button[onclick*="logout"],
   p.hint, p.sub, p.subtext, #rp-generated, #beam-status, #cut-status, #lb-worker-info,
@@ -1257,6 +1372,30 @@ async function startServer() {
     setTimeout(hideLoginLogoutAndReportTabs, 80);
   }, true);
 
+  // Keep single unified CSS link at the very end of <head> so it always wins over Tailwind CDN runtime styles
+  function keepUnifiedCssLast() {
+    try {
+      var themeLink = document.getElementById('bjm-unified-theme');
+      if (themeLink && document.head && document.head.lastElementChild !== themeLink) {
+        document.head.appendChild(themeLink);
+      }
+    } catch (e) {}
+  }
+
+  // Forward throttled user activity inside department forms to parent window (for 15-min session timeout)
+  var _lastActivityPing = 0;
+  function notifyParentActivity(force) {
+    var now = Date.now();
+    if (!force && now - _lastActivityPing < 15000) return;
+    _lastActivityPing = now;
+    try {
+      window.parent.postMessage({ type: 'BJM_USER_ACTIVITY' }, '*');
+    } catch (e) {}
+  }
+  ['mousedown', 'keydown', 'input', 'click', 'scroll', 'touchstart'].forEach(function(evtName) {
+    document.addEventListener(evtName, function() { notifyParentActivity(false); }, { passive: true, capture: true });
+  });
+
   // Non-blocking toast banner for native alert() calls inside iframe
   function showBridgeToast(message, isError) {
     try {
@@ -1264,7 +1403,7 @@ async function startServer() {
       if (existing) existing.remove();
       var div = document.createElement('div');
       div.id = 'bjm-bridge-toast';
-      div.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999999;max-width:420px;padding:12px 18px;border-radius:8px;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:500;box-shadow:0 10px 25px rgba(15,23,42,0.12);color:' + (isError ? '#991B1B' : '#065F46') + ';border:1px solid ' + (isError ? '#FECACA' : '#A7F3D0') + ';background:' + (isError ? '#FEF2F2' : '#ECFDF5') + ';transition:opacity 0.25s ease;';
+      div.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999999;max-width:420px;padding:12px 18px;border-radius:10px;font-family:"DM Sans",system-ui,sans-serif;font-size:13px;font-weight:600;box-shadow:0 12px 28px rgba(143,43,75,0.16);color:' + (isError ? '#931D3A' : '#6B213B') + ';border:1px solid ' + (isError ? '#E9B0BF' : '#E2B760') + ';background:' + (isError ? '#FDF0F3' : '#FDF6E7') + ';transition:opacity 0.25s ease;';
       div.textContent = String(message || '');
       document.body.appendChild(div);
       setTimeout(function() {
@@ -1294,6 +1433,7 @@ async function startServer() {
         return function() {
           var args = Array.prototype.slice.call(arguments);
           var fnName = String(prop);
+          notifyParentActivity(true);
           fetch('/api/rpc/' + window.__BJM_MODULE__, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1310,6 +1450,11 @@ async function startServer() {
               if (res.body && res.body.maintenance) {
                 try {
                   window.parent.postMessage({ type: 'BJM_MAINTENANCE_ACTIVE', message: errMsg }, '*');
+                } catch (e) {}
+              }
+              if (res.body && res.body.sessionExpired) {
+                try {
+                  window.parent.postMessage({ type: 'BJM_SESSION_EXPIRED', message: errMsg }, '*');
                 } catch (e) {}
               }
               showBridgeToast(errMsg, true);
@@ -1435,11 +1580,17 @@ async function startServer() {
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
+      keepUnifiedCssLast();
       cleanUnwantedHelperTexts();
       applySsoAndPermissions();
-      setTimeout(applySsoAndPermissions, 40);
-      setTimeout(applySsoAndPermissions, 250);
+      setTimeout(function() { keepUnifiedCssLast(); applySsoAndPermissions(); }, 40);
+      setTimeout(function() { keepUnifiedCssLast(); applySsoAndPermissions(); }, 300);
+      setTimeout(keepUnifiedCssLast, 1000);
       try {
+        if (document.head) {
+          var headObs = new MutationObserver(function() { keepUnifiedCssLast(); });
+          headObs.observe(document.head, { childList: true });
+        }
         if (document.body) {
           var obs = new MutationObserver(function() { scheduleClean(); });
           obs.observe(document.body, { childList: true, subtree: true });
@@ -1447,10 +1598,12 @@ async function startServer() {
       } catch (e) {}
     });
   } else {
+    keepUnifiedCssLast();
     cleanUnwantedHelperTexts();
     applySsoAndPermissions();
-    setTimeout(applySsoAndPermissions, 40);
-    setTimeout(applySsoAndPermissions, 250);
+    setTimeout(function() { keepUnifiedCssLast(); applySsoAndPermissions(); }, 40);
+    setTimeout(function() { keepUnifiedCssLast(); applySsoAndPermissions(); }, 300);
+    setTimeout(keepUnifiedCssLast, 1000);
   }
 })();
 </script>
