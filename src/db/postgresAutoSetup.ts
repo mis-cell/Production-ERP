@@ -662,6 +662,175 @@ CREATE TABLE IF NOT EXISTS vl_loom_production (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 17. FINISH DEPARTMENTS (SACKING / FORM 1) TABLE
+CREATE TABLE IF NOT EXISTS finish_departments_daily (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL UNIQUE,
+  spinning_hrs_a DOUBLE PRECISION,
+  spinning_hrs_b DOUBLE PRECISION,
+  spinning_hrs_c DOUBLE PRECISION,
+  spinning_hrs_actual DOUBLE PRECISION NOT NULL DEFAULT 0,
+  weaving_hrs_a DOUBLE PRECISION,
+  weaving_hrs_b DOUBLE PRECISION,
+  weaving_hrs_c DOUBLE PRECISION,
+  weaving_hrs_actual DOUBLE PRECISION NOT NULL DEFAULT 0,
+  lapping_mics_a DOUBLE PRECISION,
+  lapping_mics_b DOUBLE PRECISION,
+  lapping_mics_c DOUBLE PRECISION,
+  calender_mics_a DOUBLE PRECISION,
+  calender_mics_b DOUBLE PRECISION,
+  calender_mics_c DOUBLE PRECISION,
+  cutting_mics_a DOUBLE PRECISION,
+  cutting_mics_b DOUBLE PRECISION,
+  cutting_mics_c DOUBLE PRECISION,
+  hemming_mics_a DOUBLE PRECISION,
+  hemming_mics_b DOUBLE PRECISION,
+  hemming_mics_c DOUBLE PRECISION,
+  herackle_mics_a DOUBLE PRECISION,
+  herackle_mics_b DOUBLE PRECISION,
+  herackle_mics_c DOUBLE PRECISION,
+  union_mics_a DOUBLE PRECISION,
+  union_mics_b DOUBLE PRECISION,
+  union_mics_c DOUBLE PRECISION,
+  hand_sewn_mics_a DOUBLE PRECISION,
+  hand_sewn_mics_b DOUBLE PRECISION,
+  hand_sewn_mics_c DOUBLE PRECISION,
+  press_mics_a DOUBLE PRECISION,
+  press_mics_b DOUBLE PRECISION,
+  press_mics_c DOUBLE PRECISION,
+  damping_mics_a DOUBLE PRECISION,
+  damping_mics_b DOUBLE PRECISION,
+  damping_mics_c DOUBLE PRECISION,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 18. HERACKLE DAILY PRODUCTION REGISTER (FORM 2) TABLE
+CREATE TABLE IF NOT EXISTS herackle_daily_production (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL UNIQUE,
+  lapping_qty DOUBLE PRECISION,
+  calender_qty DOUBLE PRECISION,
+  cutting_a DOUBLE PRECISION,
+  cutting_b DOUBLE PRECISION,
+  cutting_c DOUBLE PRECISION,
+  hemming_a DOUBLE PRECISION,
+  hemming_b DOUBLE PRECISION,
+  hemming_c DOUBLE PRECISION,
+  herackle_a DOUBLE PRECISION,
+  herackle_b DOUBLE PRECISION,
+  herackle_c DOUBLE PRECISION,
+  safety_a DOUBLE PRECISION,
+  safety_b DOUBLE PRECISION,
+  safety_c DOUBLE PRECISION,
+  hand_sewing_a DOUBLE PRECISION,
+  hand_sewing_b DOUBLE PRECISION,
+  hand_sewing_c DOUBLE PRECISION,
+  press_a DOUBLE PRECISION,
+  press_b DOUBLE PRECISION,
+  press_c DOUBLE PRECISION,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 19. BAGS, POWER & UTILITIES REGISTER (FORM 3) TABLE
+CREATE TABLE IF NOT EXISTS bag_power_utilities_daily (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL UNIQUE,
+  jbo_r DOUBLE PRECISION,
+  jbo_i DOUBLE PRECISION,
+  coal_r DOUBLE PRECISION,
+  coal_i DOUBLE PRECISION,
+  bags DOUBLE PRECISION,
+  cesc DOUBLE PRECISION,
+  dg DOUBLE PRECISION,
+  dsl_r DOUBLE PRECISION,
+  dsl_i DOUBLE PRECISION,
+  pf_freq DOUBLE PRECISION,
+  pf_dur DOUBLE PRECISION,
+  tw_gen DOUBLE PRECISION,
+  tw_con DOUBLE PRECISION,
+  j_lorry DOUBLE PRECISION,
+  j_mt DOUBLE PRECISION,
+  sale DOUBLE PRECISION,
+  wl DOUBLE PRECISION,
+  spin DOUBLE PRECISION,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 20. HANDS & POWER REGISTER (FORM 4) TABLE
+CREATE TABLE IF NOT EXISTS hands_power_daily (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL UNIQUE,
+  yarn DOUBLE PRECISION NOT NULL DEFAULT 0,
+  agency_hands DOUBLE PRECISION NOT NULL DEFAULT 0,
+  mill DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_hands DOUBLE PRECISION NOT NULL DEFAULT 0,
+  hands_per_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  yarn_power DOUBLE PRECISION NOT NULL DEFAULT 0,
+  cesc DOUBLE PRECISION NOT NULL DEFAULT 0,
+  total_power DOUBLE PRECISION NOT NULL DEFAULT 0,
+  units_per_mt DOUBLE PRECISION NOT NULL DEFAULT 0,
+  wv DOUBLE PRECISION NOT NULL DEFAULT 0,
+  sw DOUBLE PRECISION NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 21. YARN STOCK & DUST REGISTER (FORM 5) TABLE
+CREATE TABLE IF NOT EXISTS yarn_stock_dust_daily (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL UNIQUE,
+  yarn DOUBLE PRECISION,
+  dust DOUBLE PRECISION,
+  cumulative_dust DOUBLE PRECISION NOT NULL DEFAULT 0,
+  agency DOUBLE PRECISION,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 22. WINDING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS winding_shifts (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  clerk TEXT NOT NULL DEFAULT '',
+  warp TEXT NOT NULL DEFAULT '',
+  weft TEXT NOT NULL DEFAULT '',
+  grand_total_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(entry_date, shift)
+);
+
+CREATE TABLE IF NOT EXISTS winding_production_rows (
+  id SERIAL PRIMARY KEY,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT 'WRAP',
+  winder_no TEXT NOT NULL DEFAULT '',
+  winder_name TEXT NOT NULL DEFAULT '',
+  readings_json TEXT NOT NULL DEFAULT '[]',
+  readings_text TEXT NOT NULL DEFAULT '',
+  total_kg DOUBLE PRECISION NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS winding_winders (
+  id SERIAL PRIMARY KEY,
+  winder_no TEXT NOT NULL DEFAULT '',
+  winder_name TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(winder_no, winder_name)
+);
+
 -- SEED DEFAULT ROLES & ADMIN USER (ANKANA ONLY) IN POSTGRESQL
 INSERT INTO roles (name, description, is_admin) VALUES
   ('Super Admin', '', 1),
@@ -763,6 +932,14 @@ const ORDERED_SYNC_TABLES = [
   'vl_beaming_production',
   'vl_loom_logbook',
   'vl_loom_production',
+  'finish_departments_daily',
+  'herackle_daily_production',
+  'bag_power_utilities_daily',
+  'hands_power_daily',
+  'yarn_stock_dust_daily',
+  'winding_shifts',
+  'winding_production_rows',
+  'winding_winders',
 ];
 
 function escapePgLiteral(val: any): string {

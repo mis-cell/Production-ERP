@@ -23,6 +23,7 @@ import {
 import { UserSession, EffectivePermission, ModuleMeta } from './types';
 import { AdminConsole } from './components/AdminConsole';
 import { ReportSection } from './components/ReportSection';
+import { ExtendedProductionForms, EXTENDED_FORM_KEYS } from './components/ExtendedProductionForms';
 
 const SESSION_TIMEOUT_MINUTES = 15;
 const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
@@ -172,6 +173,60 @@ const ALL_MODULES: ModuleMeta[] = [
     category: 'Weaving & Looms',
     description: 'VL Loom Group Logbooks, Loom Production Entries & Shift Analytics',
     tables: ['vl_loom_logbook', 'vl_loom_production'],
+  },
+  {
+    key: 'sacking_finish_departments',
+    docIndex: 16,
+    name: 'Finish Departments (Sacking)',
+    shortName: '17. Finish Depts (Sacking)',
+    category: 'Finishing & Packing',
+    description: 'Daily Spinning & Weaving Working Hours and Finish Department Mics Register',
+    tables: ['finish_departments_daily'],
+  },
+  {
+    key: 'herackle_daily_register',
+    docIndex: 17,
+    name: 'Herackle Daily Production Register',
+    shortName: '18. Herackle Daily',
+    category: 'Finishing & Packing',
+    description: 'Daily Lapping, Calender, Auto Cutting (x25), Hemming, Herackle, Safety, Hand Sewing & Press Register',
+    tables: ['herackle_daily_production'],
+  },
+  {
+    key: 'bag_power_utilities',
+    docIndex: 18,
+    name: 'Bags, Power & Utilities Register',
+    shortName: '19. Bags & Power',
+    category: 'Finishing & Packing',
+    description: 'Daily J.B. Oil, Coal, Bag Production, Power, Diesel, Power Failure, Waste, Jute, Sale Yarn & Spinning Register',
+    tables: ['bag_power_utilities_daily'],
+  },
+  {
+    key: 'hands_power',
+    docIndex: 19,
+    name: 'Hands & Power Register',
+    shortName: '20. Hands & Power',
+    category: 'Weaving & Looms',
+    description: 'Daily & Month-to-Date Yarn Hands, Mill Hands, C.E.S.C Power, Units/M.T & Weaving/Sewing Production',
+    tables: ['hands_power_daily'],
+  },
+  {
+    key: 'yarn_stock_dust',
+    docIndex: 20,
+    name: 'Yarn Stock & Dust Register',
+    shortName: '21. Yarn Stock & Dust',
+    category: 'Spinning & Prep',
+    description: 'Daily WDG Yarn Stock, Dust to Boiler (with Monthly Cumulative) & Agency Hands Register',
+    tables: ['yarn_stock_dust_daily'],
+  },
+  {
+    key: 'winding_production',
+    docIndex: 21,
+    name: 'Winding Department (Production Book)',
+    shortName: '22. Winding Dept',
+    category: 'Spinning & Prep',
+    description: 'Shift Operations Winding Production Book (WRAP, PRECISION, OTHER) & Winder Master',
+    tables: ['winding_shifts', 'winding_production_rows', 'winding_winders'],
   },
 ];
 
@@ -1181,7 +1236,7 @@ export default function App() {
                     viewMode === 'report' ? 'text-[#5C1A31]' : 'text-[#F6D281]'
                   }`}
                 >
-                  16 Depts
+                  {ALL_MODULES.length} Depts
                 </span>
               </button>
 
@@ -1227,7 +1282,7 @@ export default function App() {
                   type="text"
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
-                  placeholder="Filter forms 1 to 16..."
+                  placeholder={`Filter forms 1 to ${ALL_MODULES.length}...`}
                   className="w-full pl-8 pr-2.5 py-1.5 bg-[#6E1B37]/80 border border-[#F8C6D0]/30 rounded-lg text-xs font-medium text-white placeholder-[#F8C6D0]/75 focus:outline-none focus:border-[#F6D281]"
                 />
               </div>
@@ -1479,6 +1534,25 @@ export default function App() {
               setViewMode('form');
             }}
           />
+        ) : EXTENDED_FORM_KEYS.has(activeModuleMeta.key) ? (
+          <div className="flex-1 w-full h-full bg-[#FBF7ED] overflow-y-auto">
+            <ExtendedProductionForms
+              key={`${activeModuleMeta.key}-${user.id}-${iframeRefreshKey}`}
+              moduleKey={activeModuleMeta.key}
+              userId={user.id}
+              permission={permissions.find((p) => p.moduleKey === activeModuleMeta.key)}
+              onSessionExpired={(msg) => expireUserSession(msg)}
+              onMaintenanceActive={(msg) => {
+                const m = msg || 'Server is under maintenance. We will be back shortly.';
+                clearStoredSession();
+                setMaintenanceActive(true);
+                setMaintenanceMessage(m);
+                setUser(null);
+                setPermissions([]);
+                setMaintenancePopup(m);
+              }}
+            />
+          </div>
         ) : (
           <div className="flex-1 w-full h-full bg-[#FBF7ED] relative">
             <iframe

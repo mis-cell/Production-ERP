@@ -157,6 +157,60 @@ export const MODULES: ModuleDefinition[] = [
     description: 'VL Loom Group Logbooks, Loom Production Entries & Shift Analytics',
     tables: ['vl_loom_logbook', 'vl_loom_production'],
   },
+  {
+    key: 'sacking_finish_departments',
+    docIndex: 16,
+    name: 'Finish Departments (Sacking)',
+    shortName: 'Finish Depts',
+    category: 'Finishing & Packing',
+    description: 'Daily Spinning & Weaving Working Hours and Finish Department Mics Register',
+    tables: ['finish_departments_daily'],
+  },
+  {
+    key: 'herackle_daily_register',
+    docIndex: 17,
+    name: 'Herackle Daily Production Register',
+    shortName: 'Herackle Daily',
+    category: 'Finishing & Packing',
+    description: 'Daily Lapping, Calender, Auto Cutting (x25), Hemming, Herackle, Safety, Hand Sewing & Press Register',
+    tables: ['herackle_daily_production'],
+  },
+  {
+    key: 'bag_power_utilities',
+    docIndex: 18,
+    name: 'Bags, Power & Utilities Register',
+    shortName: 'Bags & Power',
+    category: 'Finishing & Packing',
+    description: 'Daily J.B. Oil, Coal, Bag Production, Power, Diesel, Power Failure, Waste, Jute, Sale Yarn & Spinning Register',
+    tables: ['bag_power_utilities_daily'],
+  },
+  {
+    key: 'hands_power',
+    docIndex: 19,
+    name: 'Hands & Power Register',
+    shortName: 'Hands & Power',
+    category: 'Weaving & Looms',
+    description: 'Daily & Month-to-Date Yarn Hands, Mill Hands, C.E.S.C Power, Units/M.T & Weaving/Sewing Production',
+    tables: ['hands_power_daily'],
+  },
+  {
+    key: 'yarn_stock_dust',
+    docIndex: 20,
+    name: 'Yarn Stock & Dust Register',
+    shortName: 'Yarn Stock & Dust',
+    category: 'Spinning & Prep',
+    description: 'Daily WDG Yarn Stock, Dust to Boiler (with Monthly Cumulative) & Agency Hands Register',
+    tables: ['yarn_stock_dust_daily'],
+  },
+  {
+    key: 'winding_production',
+    docIndex: 21,
+    name: 'Winding Department (Production Book)',
+    shortName: 'Winding Dept',
+    category: 'Spinning & Prep',
+    description: 'Shift Operations Winding Production Book (WRAP, PRECISION, OTHER) & Winder Master',
+    tables: ['winding_shifts', 'winding_production_rows', 'winding_winders'],
+  },
 ];
 
 const DB_PATH = path.resolve(process.cwd(), 'production.db');
@@ -826,6 +880,175 @@ CREATE TABLE IF NOT EXISTS vl_loom_production (
   raw_json TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- 17. FINISH DEPARTMENTS (SACKING / FORM 1) TABLE
+CREATE TABLE IF NOT EXISTS finish_departments_daily (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL UNIQUE,
+  spinning_hrs_a REAL,
+  spinning_hrs_b REAL,
+  spinning_hrs_c REAL,
+  spinning_hrs_actual REAL NOT NULL DEFAULT 0,
+  weaving_hrs_a REAL,
+  weaving_hrs_b REAL,
+  weaving_hrs_c REAL,
+  weaving_hrs_actual REAL NOT NULL DEFAULT 0,
+  lapping_mics_a REAL,
+  lapping_mics_b REAL,
+  lapping_mics_c REAL,
+  calender_mics_a REAL,
+  calender_mics_b REAL,
+  calender_mics_c REAL,
+  cutting_mics_a REAL,
+  cutting_mics_b REAL,
+  cutting_mics_c REAL,
+  hemming_mics_a REAL,
+  hemming_mics_b REAL,
+  hemming_mics_c REAL,
+  herackle_mics_a REAL,
+  herackle_mics_b REAL,
+  herackle_mics_c REAL,
+  union_mics_a REAL,
+  union_mics_b REAL,
+  union_mics_c REAL,
+  hand_sewn_mics_a REAL,
+  hand_sewn_mics_b REAL,
+  hand_sewn_mics_c REAL,
+  press_mics_a REAL,
+  press_mics_b REAL,
+  press_mics_c REAL,
+  damping_mics_a REAL,
+  damping_mics_b REAL,
+  damping_mics_c REAL,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 18. HERACKLE DAILY PRODUCTION REGISTER (FORM 2) TABLE
+CREATE TABLE IF NOT EXISTS herackle_daily_production (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL UNIQUE,
+  lapping_qty REAL,
+  calender_qty REAL,
+  cutting_a REAL,
+  cutting_b REAL,
+  cutting_c REAL,
+  hemming_a REAL,
+  hemming_b REAL,
+  hemming_c REAL,
+  herackle_a REAL,
+  herackle_b REAL,
+  herackle_c REAL,
+  safety_a REAL,
+  safety_b REAL,
+  safety_c REAL,
+  hand_sewing_a REAL,
+  hand_sewing_b REAL,
+  hand_sewing_c REAL,
+  press_a REAL,
+  press_b REAL,
+  press_c REAL,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 19. BAGS, POWER & UTILITIES REGISTER (FORM 3) TABLE
+CREATE TABLE IF NOT EXISTS bag_power_utilities_daily (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL UNIQUE,
+  jbo_r REAL,
+  jbo_i REAL,
+  coal_r REAL,
+  coal_i REAL,
+  bags REAL,
+  cesc REAL,
+  dg REAL,
+  dsl_r REAL,
+  dsl_i REAL,
+  pf_freq REAL,
+  pf_dur REAL,
+  tw_gen REAL,
+  tw_con REAL,
+  j_lorry REAL,
+  j_mt REAL,
+  sale REAL,
+  wl REAL,
+  spin REAL,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 20. HANDS & POWER REGISTER (FORM 4) TABLE
+CREATE TABLE IF NOT EXISTS hands_power_daily (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL UNIQUE,
+  yarn REAL NOT NULL DEFAULT 0,
+  agency_hands REAL NOT NULL DEFAULT 0,
+  mill REAL NOT NULL DEFAULT 0,
+  total_hands REAL NOT NULL DEFAULT 0,
+  hands_per_mt REAL NOT NULL DEFAULT 0,
+  yarn_power REAL NOT NULL DEFAULT 0,
+  cesc REAL NOT NULL DEFAULT 0,
+  total_power REAL NOT NULL DEFAULT 0,
+  units_per_mt REAL NOT NULL DEFAULT 0,
+  wv REAL NOT NULL DEFAULT 0,
+  sw REAL NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 21. YARN STOCK & DUST REGISTER (FORM 5) TABLE
+CREATE TABLE IF NOT EXISTS yarn_stock_dust_daily (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL UNIQUE,
+  yarn REAL,
+  dust REAL,
+  cumulative_dust REAL NOT NULL DEFAULT 0,
+  agency REAL,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 22. WINDING DEPARTMENT TABLES
+CREATE TABLE IF NOT EXISTS winding_shifts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  clerk TEXT NOT NULL DEFAULT '',
+  warp TEXT NOT NULL DEFAULT '',
+  weft TEXT NOT NULL DEFAULT '',
+  grand_total_kg REAL NOT NULL DEFAULT 0,
+  updated_by TEXT NOT NULL DEFAULT 'system',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(entry_date, shift)
+);
+
+CREATE TABLE IF NOT EXISTS winding_production_rows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entry_date TEXT NOT NULL,
+  shift TEXT NOT NULL,
+  quality TEXT NOT NULL DEFAULT 'WRAP',
+  winder_no TEXT NOT NULL DEFAULT '',
+  winder_name TEXT NOT NULL DEFAULT '',
+  readings_json TEXT NOT NULL DEFAULT '[]',
+  readings_text TEXT NOT NULL DEFAULT '',
+  total_kg REAL NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS winding_winders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  winder_no TEXT NOT NULL DEFAULT '',
+  winder_name TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(winder_no, winder_name)
+);
 `;
 
 export function initProductionDatabase() {
@@ -928,6 +1151,36 @@ function ensureRequiredRoles() {
     }
     for (const mod of MODULES) {
       upsertPerm.run(existing.id, mod.key, r.canView, r.canCreate, r.canEdit, r.canDelete, r.canReport);
+    }
+  }
+
+  // Non-destructively ensure ALL existing roles also have permission entries for newly added modules
+  const allRoles = db.prepare('SELECT id, name, is_admin FROM roles').all() as {
+    id: number;
+    name: string;
+    is_admin: number;
+  }[];
+  for (const role of allRoles) {
+    const rName = role.name.toLowerCase();
+    for (const mod of MODULES) {
+      if (role.is_admin === 1 || rName === 'super admin' || rName === 'super user') {
+        upsertPerm.run(role.id, mod.key, 1, 1, 1, 1, 1);
+      } else if (rName === 'mill manager' || rName === 'user') {
+        upsertPerm.run(role.id, mod.key, 1, 1, 1, 0, 1);
+      } else if (rName === 'operator') {
+        upsertPerm.run(role.id, mod.key, 1, 1, 0, 0, 1);
+      } else if (rName.includes('spinning')) {
+        const allow = mod.category === 'Spinning & Prep' ? 1 : 0;
+        upsertPerm.run(role.id, mod.key, allow, allow, allow, allow, allow);
+      } else if (rName.includes('beaming') || rName.includes('loom')) {
+        const allow = mod.category === 'Beaming' || mod.category === 'Weaving & Looms' ? 1 : 0;
+        upsertPerm.run(role.id, mod.key, allow, allow, allow, 0, allow);
+      } else if (rName.includes('finishing') || rName.includes('packing')) {
+        const allow = mod.category === 'Finishing & Packing' ? 1 : 0;
+        upsertPerm.run(role.id, mod.key, allow, allow, allow, 0, allow);
+      } else {
+        upsertPerm.run(role.id, mod.key, 1, 1, 0, 0, 1);
+      }
     }
   }
 }
@@ -1340,6 +1593,18 @@ export function executeModuleRpc(
       return executeVlBeamingRpc(fnName, args, today);
     case 'vl_loom':
       return executeVlLoomRpc(fnName, args, today);
+    case 'sacking_finish_departments':
+      return executeFinishDepartmentsRpc(fnName, firstArg, userContext);
+    case 'herackle_daily_register':
+      return executeHerackleDailyRpc(fnName, firstArg, userContext);
+    case 'bag_power_utilities':
+      return executeBagPowerUtilitiesRpc(fnName, firstArg, userContext);
+    case 'hands_power':
+      return executeHandsPowerRpc(fnName, firstArg, userContext);
+    case 'yarn_stock_dust':
+      return executeYarnStockDustRpc(fnName, firstArg, userContext);
+    case 'winding_production':
+      return executeWindingProductionRpc(fnName, firstArg, userContext);
     default:
       return { success: true, ok: true, data: [] };
   }
@@ -4744,4 +5009,487 @@ function safeJson(str: string): Record<string, any> {
     return {};
   }
 }
+
+function toNullableNum(v: any): number | null {
+  if (v === '' || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function toZeroNum(v: any): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// ============================================================================
+// 17. FINISH DEPARTMENTS (SACKING / FORM 1) RPC HANDLER
+// ============================================================================
+const FINISH_DEPT_COLUMNS = [
+  'spinning_hrs_a', 'spinning_hrs_b', 'spinning_hrs_c',
+  'weaving_hrs_a', 'weaving_hrs_b', 'weaving_hrs_c',
+  'lapping_mics_a', 'lapping_mics_b', 'lapping_mics_c',
+  'calender_mics_a', 'calender_mics_b', 'calender_mics_c',
+  'cutting_mics_a', 'cutting_mics_b', 'cutting_mics_c',
+  'hemming_mics_a', 'hemming_mics_b', 'hemming_mics_c',
+  'herackle_mics_a', 'herackle_mics_b', 'herackle_mics_c',
+  'union_mics_a', 'union_mics_b', 'union_mics_c',
+  'hand_sewn_mics_a', 'hand_sewn_mics_b', 'hand_sewn_mics_c',
+  'press_mics_a', 'press_mics_b', 'press_mics_c',
+  'damping_mics_a', 'damping_mics_b', 'damping_mics_c',
+] as const;
+
+function executeFinishDepartmentsRpc(
+  fnName: string,
+  payload: any,
+  user: { username: string; fullName: string }
+) {
+  if (fnName === 'getAll') {
+    const rows = db.prepare('SELECT * FROM finish_departments_daily ORDER BY entry_date ASC').all();
+    return { rows };
+  }
+  if (fnName === 'saveEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    const vals = FINISH_DEPT_COLUMNS.map((c) => toNullableNum(payload?.[c]));
+    const spinningActual = +(toZeroNum(vals[0]) + toZeroNum(vals[1]) + toZeroNum(vals[2])).toFixed(2);
+    const weavingActual = +(toZeroNum(vals[3]) + toZeroNum(vals[4]) + toZeroNum(vals[5])).toFixed(2);
+
+    const allCols = [...FINISH_DEPT_COLUMNS, 'spinning_hrs_actual', 'weaving_hrs_actual', 'updated_by'];
+    const placeholders = allCols.map(() => '?').join(', ');
+    const updates = allCols.map((c) => `${c} = excluded.${c}`).join(', ');
+    db.prepare(`
+      INSERT INTO finish_departments_daily (entry_date, ${allCols.join(', ')}, updated_at)
+      VALUES (?, ${placeholders}, datetime('now'))
+      ON CONFLICT(entry_date) DO UPDATE SET ${updates}, updated_at = datetime('now')
+    `).run(entryDate, ...vals, spinningActual, weavingActual, user.username);
+
+    const saved = db.prepare('SELECT * FROM finish_departments_daily WHERE entry_date = ?').get(entryDate);
+    return { ok: true, entry: saved };
+  }
+  if (fnName === 'deleteEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    db.prepare('DELETE FROM finish_departments_daily WHERE entry_date = ?').run(entryDate);
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+// ============================================================================
+// 18. HERACKLE DAILY PRODUCTION REGISTER (FORM 2) RPC HANDLER
+// ============================================================================
+function executeHerackleDailyRpc(
+  fnName: string,
+  payload: any,
+  user: { username: string; fullName: string }
+) {
+  if (fnName === 'getAll') {
+    const rows = db.prepare('SELECT * FROM herackle_daily_production ORDER BY entry_date ASC').all();
+    return { rows };
+  }
+  if (fnName === 'saveEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+
+    const hemmingA = toNullableNum(payload?.hemming_a);
+    const hemmingB = toNullableNum(payload?.hemming_b);
+    const hemmingC = toNullableNum(payload?.hemming_c);
+    const cuttingA = hemmingA !== null ? +(hemmingA * 25).toFixed(4) : null;
+    const cuttingB = hemmingB !== null ? +(hemmingB * 25).toFixed(4) : null;
+    const cuttingC = hemmingC !== null ? +(hemmingC * 25).toFixed(4) : null;
+
+    db.prepare(`
+      INSERT INTO herackle_daily_production (
+        entry_date, lapping_qty, calender_qty,
+        cutting_a, cutting_b, cutting_c,
+        hemming_a, hemming_b, hemming_c,
+        herackle_a, herackle_b, herackle_c,
+        safety_a, safety_b, safety_c,
+        hand_sewing_a, hand_sewing_b, hand_sewing_c,
+        press_a, press_b, press_c,
+        updated_by, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(entry_date) DO UPDATE SET
+        lapping_qty = excluded.lapping_qty,
+        calender_qty = excluded.calender_qty,
+        cutting_a = excluded.cutting_a,
+        cutting_b = excluded.cutting_b,
+        cutting_c = excluded.cutting_c,
+        hemming_a = excluded.hemming_a,
+        hemming_b = excluded.hemming_b,
+        hemming_c = excluded.hemming_c,
+        herackle_a = excluded.herackle_a,
+        herackle_b = excluded.herackle_b,
+        herackle_c = excluded.herackle_c,
+        safety_a = excluded.safety_a,
+        safety_b = excluded.safety_b,
+        safety_c = excluded.safety_c,
+        hand_sewing_a = excluded.hand_sewing_a,
+        hand_sewing_b = excluded.hand_sewing_b,
+        hand_sewing_c = excluded.hand_sewing_c,
+        press_a = excluded.press_a,
+        press_b = excluded.press_b,
+        press_c = excluded.press_c,
+        updated_by = excluded.updated_by,
+        updated_at = datetime('now')
+    `).run(
+      entryDate,
+      toNullableNum(payload?.lapping_qty),
+      toNullableNum(payload?.calender_qty),
+      cuttingA, cuttingB, cuttingC,
+      hemmingA, hemmingB, hemmingC,
+      toNullableNum(payload?.herackle_a), toNullableNum(payload?.herackle_b), toNullableNum(payload?.herackle_c),
+      toNullableNum(payload?.safety_a), toNullableNum(payload?.safety_b), toNullableNum(payload?.safety_c),
+      toNullableNum(payload?.hand_sewing_a), toNullableNum(payload?.hand_sewing_b), toNullableNum(payload?.hand_sewing_c),
+      toNullableNum(payload?.press_a), toNullableNum(payload?.press_b), toNullableNum(payload?.press_c),
+      user.username
+    );
+
+    const saved = db.prepare('SELECT * FROM herackle_daily_production WHERE entry_date = ?').get(entryDate);
+    return { ok: true, entry: saved };
+  }
+  if (fnName === 'deleteEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    db.prepare('DELETE FROM herackle_daily_production WHERE entry_date = ?').run(entryDate);
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+// ============================================================================
+// 19. BAGS, POWER & UTILITIES REGISTER (FORM 3) RPC HANDLER
+// ============================================================================
+const BAG_POWER_COLUMNS = [
+  'jbo_r', 'jbo_i', 'coal_r', 'coal_i', 'bags', 'cesc', 'dg',
+  'dsl_r', 'dsl_i', 'pf_freq', 'pf_dur', 'tw_gen', 'tw_con',
+  'j_lorry', 'j_mt', 'sale', 'wl', 'spin',
+] as const;
+
+function executeBagPowerUtilitiesRpc(
+  fnName: string,
+  payload: any,
+  user: { username: string; fullName: string }
+) {
+  if (fnName === 'getAll') {
+    const rows = db.prepare('SELECT * FROM bag_power_utilities_daily ORDER BY entry_date ASC').all();
+    return { rows };
+  }
+  if (fnName === 'saveEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    const vals = BAG_POWER_COLUMNS.map((c) => toNullableNum(payload?.[c]));
+    const allCols = [...BAG_POWER_COLUMNS, 'updated_by'];
+    const placeholders = allCols.map(() => '?').join(', ');
+    const updates = allCols.map((c) => `${c} = excluded.${c}`).join(', ');
+    db.prepare(`
+      INSERT INTO bag_power_utilities_daily (entry_date, ${allCols.join(', ')}, updated_at)
+      VALUES (?, ${placeholders}, datetime('now'))
+      ON CONFLICT(entry_date) DO UPDATE SET ${updates}, updated_at = datetime('now')
+    `).run(entryDate, ...vals, user.username);
+
+    const saved = db.prepare('SELECT * FROM bag_power_utilities_daily WHERE entry_date = ?').get(entryDate);
+    return { ok: true, entry: saved };
+  }
+  if (fnName === 'deleteEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    db.prepare('DELETE FROM bag_power_utilities_daily WHERE entry_date = ?').run(entryDate);
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+// ============================================================================
+// 20. HANDS & POWER REGISTER (FORM 4) RPC HANDLER
+// ============================================================================
+function executeHandsPowerRpc(
+  fnName: string,
+  payload: any,
+  user: { username: string; fullName: string }
+) {
+  if (fnName === 'getAll') {
+    const rows = db.prepare('SELECT * FROM hands_power_daily ORDER BY entry_date ASC').all();
+    return { rows };
+  }
+  if (fnName === 'saveEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    const yarn = toZeroNum(payload?.yarn);
+    const mill = toZeroNum(payload?.mill);
+    const cesc = toZeroNum(payload?.cesc);
+    const wv = toZeroNum(payload?.wv);
+    const sw = toZeroNum(payload?.sw);
+
+    const agencyHands = Math.round(yarn * 18);
+    const totalHands = mill + agencyHands;
+    const handsPerMt = wv > 0 ? +(totalHands / wv).toFixed(2) : 0;
+    const yarnPower = Math.round(yarn * 225);
+    const totalPower = cesc + yarnPower;
+    const unitsPerMt = wv > 0 ? Math.round(totalPower / wv) : 0;
+
+    db.prepare(`
+      INSERT INTO hands_power_daily (
+        entry_date, yarn, agency_hands, mill, total_hands, hands_per_mt,
+        yarn_power, cesc, total_power, units_per_mt, wv, sw, updated_by, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(entry_date) DO UPDATE SET
+        yarn = excluded.yarn,
+        agency_hands = excluded.agency_hands,
+        mill = excluded.mill,
+        total_hands = excluded.total_hands,
+        hands_per_mt = excluded.hands_per_mt,
+        yarn_power = excluded.yarn_power,
+        cesc = excluded.cesc,
+        total_power = excluded.total_power,
+        units_per_mt = excluded.units_per_mt,
+        wv = excluded.wv,
+        sw = excluded.sw,
+        updated_by = excluded.updated_by,
+        updated_at = datetime('now')
+    `).run(
+      entryDate, yarn, agencyHands, mill, totalHands, handsPerMt,
+      yarnPower, cesc, totalPower, unitsPerMt, wv, sw, user.username
+    );
+
+    const saved = db.prepare('SELECT * FROM hands_power_daily WHERE entry_date = ?').get(entryDate);
+    return { ok: true, entry: saved };
+  }
+  if (fnName === 'deleteEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    db.prepare('DELETE FROM hands_power_daily WHERE entry_date = ?').run(entryDate);
+    return { ok: true };
+  }
+  return { ok: true };
+}
+
+// ============================================================================
+// 21. YARN STOCK & DUST REGISTER (FORM 5) RPC HANDLER
+// ============================================================================
+function recomputeMonthCumulativeDust(monthPrefix: string) {
+  const rows = db
+    .prepare('SELECT id, entry_date, dust FROM yarn_stock_dust_daily WHERE entry_date LIKE ? ORDER BY entry_date ASC')
+    .all(`${monthPrefix}%`) as { id: number; entry_date: string; dust: number | null }[];
+  let running = 0;
+  const upd = db.prepare('UPDATE yarn_stock_dust_daily SET cumulative_dust = ? WHERE id = ?');
+  for (const r of rows) {
+    running = +(running + (Number(r.dust) || 0)).toFixed(3);
+    upd.run(running, r.id);
+  }
+}
+
+function executeYarnStockDustRpc(
+  fnName: string,
+  payload: any,
+  user: { username: string; fullName: string }
+) {
+  if (fnName === 'getAll') {
+    const rows = db.prepare('SELECT * FROM yarn_stock_dust_daily ORDER BY entry_date ASC').all();
+    return { rows };
+  }
+  if (fnName === 'saveEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    const yarn = toNullableNum(payload?.yarn);
+    const dust = toNullableNum(payload?.dust);
+    const agency = toNullableNum(payload?.agency);
+
+    db.prepare(`
+      INSERT INTO yarn_stock_dust_daily (entry_date, yarn, dust, cumulative_dust, agency, updated_by, updated_at)
+      VALUES (?, ?, ?, 0, ?, ?, datetime('now'))
+      ON CONFLICT(entry_date) DO UPDATE SET
+        yarn = excluded.yarn,
+        dust = excluded.dust,
+        agency = excluded.agency,
+        updated_by = excluded.updated_by,
+        updated_at = datetime('now')
+    `).run(entryDate, yarn, dust, agency, user.username);
+
+    recomputeMonthCumulativeDust(entryDate.slice(0, 7));
+    const rows = db.prepare('SELECT * FROM yarn_stock_dust_daily ORDER BY entry_date ASC').all();
+    return { ok: true, rows };
+  }
+  if (fnName === 'deleteEntry') {
+    const entryDate = String(payload?.entry_date || payload?.date || '').trim();
+    if (!entryDate) throw new Error('Entry date is required.');
+    db.prepare('DELETE FROM yarn_stock_dust_daily WHERE entry_date = ?').run(entryDate);
+    recomputeMonthCumulativeDust(entryDate.slice(0, 7));
+    const rows = db.prepare('SELECT * FROM yarn_stock_dust_daily ORDER BY entry_date ASC').all();
+    return { ok: true, rows };
+  }
+  return { ok: true };
+}
+
+// ============================================================================
+// 22. WINDING DEPARTMENT (PRODUCTION BOOK) RPC HANDLER
+// ============================================================================
+function executeWindingProductionRpc(
+  fnName: string,
+  payload: any,
+  user: { username: string; fullName: string }
+) {
+  if (fnName === 'getWinders') {
+    const winders = db
+      .prepare('SELECT winder_no as no, winder_name as name FROM winding_winders ORDER BY CAST(winder_no AS INTEGER) ASC, winder_no ASC, winder_name ASC')
+      .all();
+    return { winders };
+  }
+
+  if (fnName === 'loadEntry') {
+    const entryDate = String(payload?.date || payload?.entry_date || '').trim();
+    const shift = String(payload?.shift || 'A').trim().toUpperCase();
+    const shiftRow = db
+      .prepare('SELECT * FROM winding_shifts WHERE entry_date = ? AND shift = ?')
+      .get(entryDate, shift) as any;
+    const rawRows = db
+      .prepare('SELECT * FROM winding_production_rows WHERE entry_date = ? AND shift = ? ORDER BY id ASC')
+      .all(entryDate, shift) as any[];
+
+    const rows = rawRows.map((r) => {
+      let readings: number[] = [];
+      try {
+        const parsed = JSON.parse(r.readings_json || '[]');
+        if (Array.isArray(parsed)) readings = parsed.map(Number);
+      } catch {
+        readings = [];
+      }
+      return {
+        id: r.id,
+        quality: r.quality,
+        no: r.winder_no,
+        name: r.winder_name,
+        readings,
+        total: Number(r.total_kg || 0),
+      };
+    });
+
+    return {
+      meta: shiftRow
+        ? { clerk: shiftRow.clerk || '', warp: shiftRow.warp || '', weft: shiftRow.weft || '' }
+        : null,
+      rows,
+    };
+  }
+
+  if (fnName === 'saveEntry') {
+    const entryDate = String(payload?.date || payload?.entry_date || '').trim();
+    const shift = String(payload?.shift || 'A').trim().toUpperCase();
+    if (!entryDate) throw new Error('Date is required.');
+
+    const clerk = String(payload?.clerk || '').trim();
+    const warp = String(payload?.warp || '').trim();
+    const weft = String(payload?.weft || '').trim();
+    const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+    const grandTotal = +rows
+      .reduce((acc: number, r: any) => acc + toZeroNum(r.total), 0)
+      .toFixed(3);
+
+    const tx = db.transaction(() => {
+      db.prepare(`
+        INSERT INTO winding_shifts (entry_date, shift, clerk, warp, weft, grand_total_kg, updated_by, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(entry_date, shift) DO UPDATE SET
+          clerk = excluded.clerk,
+          warp = excluded.warp,
+          weft = excluded.weft,
+          grand_total_kg = excluded.grand_total_kg,
+          updated_by = excluded.updated_by,
+          updated_at = datetime('now')
+      `).run(entryDate, shift, clerk, warp, weft, grandTotal, user.username);
+
+      db.prepare('DELETE FROM winding_production_rows WHERE entry_date = ? AND shift = ?').run(entryDate, shift);
+
+      const insRow = db.prepare(`
+        INSERT INTO winding_production_rows (entry_date, shift, quality, winder_no, winder_name, readings_json, readings_text, total_kg)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      const insWinder = db.prepare(`
+        INSERT INTO winding_winders (winder_no, winder_name)
+        VALUES (?, ?)
+        ON CONFLICT(winder_no, winder_name) DO NOTHING
+      `);
+
+      for (const r of rows) {
+        const readingsArr = Array.isArray(r.readings)
+          ? r.readings.map((x: any) => Number(x)).filter((n: number) => Number.isFinite(n))
+          : [];
+        const totalKg = +toZeroNum(r.total).toFixed(3);
+        const wNo = String(r.no || '').trim();
+        const wName = String(r.name || '').trim();
+        const quality = String(r.quality || 'WRAP').trim().toUpperCase();
+
+        insRow.run(
+          entryDate,
+          shift,
+          quality,
+          wNo,
+          wName,
+          JSON.stringify(readingsArr),
+          readingsArr.join(', '),
+          totalKg
+        );
+        if (wNo || wName) {
+          insWinder.run(wNo, wName);
+        }
+      }
+    });
+    tx();
+
+    const winders = db
+      .prepare('SELECT winder_no as no, winder_name as name FROM winding_winders ORDER BY CAST(winder_no AS INTEGER) ASC, winder_no ASC, winder_name ASC')
+      .all();
+    return { ok: true, count: rows.length, winders };
+  }
+
+  if (fnName === 'deleteEntry') {
+    const entryDate = String(payload?.date || payload?.entry_date || '').trim();
+    const shift = String(payload?.shift || 'A').trim().toUpperCase();
+    db.prepare('DELETE FROM winding_production_rows WHERE entry_date = ? AND shift = ?').run(entryDate, shift);
+    db.prepare('DELETE FROM winding_shifts WHERE entry_date = ? AND shift = ?').run(entryDate, shift);
+    return { ok: true };
+  }
+
+  if (fnName === 'getReport') {
+    const from = String(payload?.from || '').trim();
+    const to = String(payload?.to || '').trim();
+    const shiftFilter = String(payload?.shift || '').trim().toUpperCase();
+
+    const shiftRows = db
+      .prepare('SELECT * FROM winding_shifts WHERE (? = \'\' OR entry_date >= ?) AND (? = \'\' OR entry_date <= ?) ORDER BY entry_date ASC, shift ASC')
+      .all(from, from, to, to) as any[];
+    const prodRows = db
+      .prepare('SELECT * FROM winding_production_rows WHERE (? = \'\' OR entry_date >= ?) AND (? = \'\' OR entry_date <= ?) ORDER BY entry_date ASC, shift ASC, id ASC')
+      .all(from, from, to, to) as any[];
+
+    const filteredMeta = shiftRows
+      .filter((m) => !shiftFilter || m.shift === shiftFilter)
+      .map((m) => ({
+        date: m.entry_date,
+        shift: m.shift,
+        clerk: m.clerk,
+        warp: m.warp,
+        weft: m.weft,
+      }));
+
+    const filteredRows = prodRows
+      .filter((r) => !shiftFilter || r.shift === shiftFilter)
+      .map((r) => ({
+        date: r.entry_date,
+        shift: r.shift,
+        quality: r.quality,
+        no: r.winder_no,
+        name: r.winder_name,
+        readings: r.readings_text || '',
+        total: Number(r.total_kg || 0),
+      }));
+
+    return { rows: filteredRows, meta: filteredMeta };
+  }
+
+  return { ok: true };
+}
+
 

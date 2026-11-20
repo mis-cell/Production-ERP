@@ -817,7 +817,12 @@ async function startServer() {
             enrichedRows.push(mergedRow);
 
             // Skip master/setting/option config tables from production KPI totals
-            if (tbl.endsWith('_masters') || tbl.endsWith('_settings') || tbl.endsWith('_options')) {
+            if (
+              tbl.endsWith('_masters') ||
+              tbl.endsWith('_settings') ||
+              tbl.endsWith('_options') ||
+              tbl === 'winding_winders'
+            ) {
               continue;
             }
 
@@ -845,6 +850,8 @@ async function startServer() {
             const operator = String(
               mergedRow.operator_name ||
                 mergedRow.weaver_name ||
+                mergedRow.winder_name ||
+                mergedRow.clerk ||
                 mergedRow.supervisor ||
                 mergedRow.operator ||
                 mergedRow.weaver ||
@@ -974,6 +981,51 @@ async function startServer() {
               primaryLabel = 'Meter Rdg';
               secondaryVal = Number(mergedRow.opening_reading || 0);
               secondaryLabel = 'Open Rdg';
+            } else if (mergedRow.total_kg !== undefined || mergedRow.grand_total_kg !== undefined) {
+              primaryVal = Number(mergedRow.total_kg ?? mergedRow.grand_total_kg ?? 0);
+              primaryLabel = 'Kg';
+              modPrimaryUnit = 'Kg';
+            } else if (mergedRow.bags !== undefined && mergedRow.cesc !== undefined) {
+              primaryVal = Number(mergedRow.bags || 0);
+              primaryLabel = 'Bags';
+              secondaryVal = Number(mergedRow.spin || mergedRow.cesc || 0);
+              secondaryLabel = mergedRow.spin ? 'Spin MT' : 'CESC Units';
+              modPrimaryUnit = 'Bags';
+              modSecondaryUnit = secondaryLabel;
+            } else if (mergedRow.total_power !== undefined && mergedRow.total_hands !== undefined) {
+              primaryVal = Number(mergedRow.wv || 0);
+              primaryLabel = 'Weaving MT';
+              secondaryVal = Number(mergedRow.total_power || 0);
+              secondaryLabel = 'Power Units';
+              modPrimaryUnit = 'MT';
+              modSecondaryUnit = 'Units';
+            } else if (mergedRow.cumulative_dust !== undefined) {
+              primaryVal = Number(mergedRow.yarn || 0);
+              primaryLabel = 'Yarn MT';
+              secondaryVal = Number(mergedRow.dust || 0);
+              secondaryLabel = 'Dust MT';
+              modPrimaryUnit = 'MT';
+              modSecondaryUnit = 'Dust MT';
+            } else if (mergedRow.spinning_hrs_actual !== undefined) {
+              primaryVal = Number(mergedRow.spinning_hrs_actual || 0);
+              primaryLabel = 'Spin Hrs';
+              secondaryVal = Number(mergedRow.weaving_hrs_actual || 0);
+              secondaryLabel = 'Weav Hrs';
+              modPrimaryUnit = 'Hrs';
+              modSecondaryUnit = 'Weav Hrs';
+            } else if (mergedRow.lapping_qty !== undefined && mergedRow.calender_qty !== undefined) {
+              primaryVal =
+                Number(mergedRow.cutting_a || 0) +
+                Number(mergedRow.cutting_b || 0) +
+                Number(mergedRow.cutting_c || 0);
+              primaryLabel = 'Cut Pcs';
+              secondaryVal =
+                Number(mergedRow.herackle_a || 0) +
+                Number(mergedRow.herackle_b || 0) +
+                Number(mergedRow.herackle_c || 0);
+              secondaryLabel = 'Herackle Bdl';
+              modPrimaryUnit = 'Pcs';
+              modSecondaryUnit = 'Bundles';
             } else if (breakdownVal > 0) {
               primaryVal = breakdownVal;
               primaryLabel = 'Down Mins';
